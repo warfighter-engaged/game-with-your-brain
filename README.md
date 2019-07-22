@@ -18,3 +18,20 @@ If you want to learn more about creating good readme files then refer the follow
 - [ASP.NET Core](https://github.com/aspnet/Home)
 - [Visual Studio Code](https://github.com/Microsoft/vscode)
 - [Chakra Core](https://github.com/Microsoft/ChakraCore)
+
+# Git command-line
+
+To get your local changes
+```
+!git log  --decorate --parents -p -m -t HEAD --not origin/master^ > log.mod.log
+```
+
+To get status of your repo and get tree view of your local and origin branches
+```
+!git status -vv > log.diff.log ; git log --branches --decorate --parents --oneline --graph --not origin/master^ > log.log
+```
+
+To see your branches
+```
+!git branch -a | sed -n -r -e '/lidener/ {s/^[^[:alnum:]]+//;s/remotes\/origin\///;p}' | sort -u > log.diff.log
+```
