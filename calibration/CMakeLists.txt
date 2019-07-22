@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.5)
 # Name of our Project
 project(calibration)
 
+set (CMAKE_CXX_STANDARD 14)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(SDL2 REQUIRED)
@@ -14,7 +16,9 @@ include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(include)
 
 add_executable(calibration
-    src/main.cpp)
+    src/main.cpp
+    src/game_state.cpp
+)
 
 
 target_link_libraries(calibration ${SDL2_LIBRARIES})
