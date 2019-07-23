@@ -3,7 +3,8 @@
 
 #include "game_state.h"
 
-class Command {
+class Command
+{
   GameState *gs;
 
 protected:
@@ -15,7 +16,8 @@ public:
   void execute() { execute(*gs); }
 };
 
-class JumpCommand : public Command {
+class JumpCommand : public Command
+{
 protected:
   void execute(GameState &gs) override { gs.jump(); }
 
@@ -23,7 +25,8 @@ public:
   explicit JumpCommand(GameState *gameState) : Command(gameState) {}
 };
 
-class WalkLeftCommand : public Command {
+class WalkLeftCommand : public Command
+{
 protected:
   void execute(GameState &gs) override { gs.walkLeft(); }
 
@@ -31,7 +34,8 @@ public:
   explicit WalkLeftCommand(GameState *gameState) : Command(gameState) {}
 };
 
-class WalkRightCommand : public Command {
+class WalkRightCommand : public Command
+{
 protected:
   void execute(GameState &gs) override { gs.walkRight(); }
 
@@ -39,7 +43,8 @@ public:
   explicit WalkRightCommand(GameState *gameState) : Command(gameState) {}
 };
 
-class MenuSelectCommand : public Command {
+class MenuSelectCommand : public Command
+{
 protected:
   void execute(GameState &gs) override { gs.menuSelect(); }
 
@@ -47,12 +52,13 @@ public:
   explicit MenuSelectCommand(GameState *gameState) : Command(gameState) {}
 };
 
-class ExitCommand : public Command {
+class ExitCommand : public Command
+{
 protected:
-	void execute(GameState &gs) override { gs.exit(); }
+  void execute(GameState &gs) override { gs.exit(); }
 
 public:
-	explicit ExitCommand(GameState *gameState) : Command(gameState) {}
+  explicit ExitCommand(GameState *gameState) : Command(gameState) {}
 };
 
 #endif // WARFIGHTER__INPUT_H__

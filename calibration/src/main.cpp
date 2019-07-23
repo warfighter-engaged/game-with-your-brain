@@ -1,197 +1,135 @@
 #include "SDL.h"
 #include <stdio.h>
 
+#include "crc.h"
 #include "game_state.h"
 #include "input.h"
+#include "renderer.h"
+#include "sprite.h"
 
-#define FONT_HEIGHT 32
+// TODO: Make events that fire on hold (per-frame if the key is down instead of just the frame when the key is pressed)
+// not 100% sure the best way to do this
+struct KeyboardInput
+{
+    Command *w;
+    Command *a;
+    Command *d;
+    Command *enter;
+    Command *esc;
 
-#include "SDL_ttf.h"
+    KeyboardInput(GameState *gs)
+        : w(new JumpCommand(gs)), a(new WalkLeftCommand(gs)),
+          d(new WalkRightCommand(gs)), enter(new MenuSelectCommand(gs)),
+          esc(new ExitCommand(gs)) {}
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-struct KeyboardInput {
-  Command *w;
-  Command *a;
-  Command *d;
-  Command *enter;
-  Command *esc;
-
-  KeyboardInput(GameState *gs)
-      : w(new JumpCommand(gs)), a(new WalkLeftCommand(gs)),
-        d(new WalkRightCommand(gs)), enter(new MenuSelectCommand(gs)), esc(new ExitCommand(gs)) {}
-
-  void interpret(SDL_Event const &e) {
-    if (e.type == SDL_KEYDOWN) {
-      switch (e.key.keysym.sym) {
-		  case SDLK_w:
-			w->execute();
-			break;
-		  case SDLK_a:
-			a->execute();
-			break;
-		  case SDLK_d:
-			d->execute();
-			break;
-		  case SDLK_RETURN:
-			enter->execute();
-			break;
-		  case SDLK_ESCAPE:
-			esc->execute();
-			break;
-      }
-    }
-  }
-};
-
-struct Game {
-  SDL_Window *window;
-  SDL_Surface *screenSurface;
-  SDL_Surface *helloWorld;
-  SDL_Renderer *renderer;
-  TTF_Font *font;
-  bool quit;
-
-  Game() : window(NULL), screenSurface(NULL), helloWorld(NULL), quit(false) {}
-
-  bool init() {
-    // Initialize SDL2.
-    // When there's an error, SDL_Init returns -1.
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-      return false;
-    }
-
-    // Create the window.
-    window = SDL_CreateWindow("Calibration", SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
-                              SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    if (window == NULL) {
-      printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-      return false;
-    }
-
-	SDL_SetWindowFullscreen(window, true);
-
-    SDL_Init(SDL_INIT_VIDEO);
-
-    // Initialize the SDL_ttf library
-    TTF_Init();
-
-    // Get the window surface
-    screenSurface = SDL_GetWindowSurface(window);
-
-    // Create a renderer
-    renderer = SDL_CreateRenderer(window, -1, 0);
-
-    return true;
-  }
-
-  bool loadMedia() {
-    // Smiley face image
-    helloWorld = SDL_LoadBMP("./data/hewwo.bmp");
-    if (helloWorld == NULL) {
-      printf("Unable to load image %s! SDL Error: %s\n", "hewwo",
-             SDL_GetError());
-      return false;
-    }
-
-    font = TTF_OpenFont("./data/fonts/corbel.ttf", FONT_HEIGHT);
-
-    return true;
-  }
-
-  void game_loop() {
-    SDL_Event e;
-    GameState gs;
-
-    KeyboardInput ki(&gs);
-
-	int x = 0, y = 0;
-
-    while (!quit && !gs.shouldExit) {
-
-      while (SDL_PollEvent(&e) != 0) {
-        if (e.type == SDL_QUIT) {
-          quit = true;
+    void interpret(SDL_Event const &e)
+    {
+        if (e.type == SDL_KEYDOWN)
+        {
+            switch (e.key.keysym.sym)
+            {
+            case SDLK_w:
+                w->execute();
+                break;
+            case SDLK_a:
+                a->execute();
+                break;
+            case SDLK_d:
+                d->execute();
+                break;
+            case SDLK_RETURN:
+                enter->execute();
+                break;
+            case SDLK_ESCAPE:
+                esc->execute();
+                break;
+            }
         }
-        ki.interpret(e);
-      }
-
-      x += 1;
-      y += 1;
-
-      if (x > SCREEN_WIDTH) {
-        x = 0;
-      }
-      if (y > SCREEN_HEIGHT) {
-        y = 0;
-      }
-
-      {
-        SDL_Texture *texture =
-            SDL_CreateTextureFromSurface(renderer, helloWorld);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
-
-        SDL_DestroyTexture(texture);
-      }
-
-      {
-        SDL_Color color = {0, 0, 0};
-        SDL_Surface *surface =
-            TTF_RenderText_Blended(font, "Bonjour, mon ami!", color);
-        SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        int texW = 0;
-        int texH = 0;
-        SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
-        SDL_Rect dstrect = {x, y, texW, texH};
-
-        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-        SDL_DestroyTexture(texture);
-        SDL_FreeSurface(surface);
-      }
-      SDL_RenderPresent(renderer);
     }
-  }
-
-  void close() {
-    // Destroy font
-    TTF_CloseFont(font);
-
-    // Deallocate surface
-    SDL_FreeSurface(helloWorld);
-
-    // Destroy the renderer
-    SDL_DestroyRenderer(renderer);
-
-    // Destroy the window
-    SDL_DestroyWindow(window);
-
-    TTF_Quit();
-    SDL_Quit();
-  }
 };
 
-int main(int argc, char *argv[]) {
-  bool result;
-  Game game;
-  result = game.init();
-  if (!result) {
-    printf("Failed to initialize!\n");
-    return 1;
-  }
+struct Game
+{
+    Renderer renderer;
 
-  result = game.loadMedia();
-  if (!result) {
-    printf("Failed to load media!\n");
-    return 1;
-  }
+    Game() {}
 
-  game.game_loop();
+    bool init()
+    {
+        if (!renderer.init())
+        {
+            printf("Renderer initialization failed\n");
+            return false;
+        }
 
-  game.close();
+        if (!renderer.load_media())
+        {
+            printf("Media resolution failed\n");
+            return false;
+        }
 
-  return 0;
+        return true;
+    }
+
+    void game_loop()
+    {
+        SDL_Event e;
+        GameState gs;
+
+        KeyboardInput ki(&gs);
+
+        Sprite hewwo_sprite(WFID("./data/hewwo.bmp"), Vec2(0.0, 0.0));
+
+        while (!gs.shouldExit)
+        {
+
+            while (SDL_PollEvent(&e) != 0)
+            {
+                if (e.type == SDL_QUIT)
+                {
+                    gs.exit();
+                }
+                ki.interpret(e);
+            }
+
+            // Platforming logic
+            // TODO: Extract this into a scene-specific logic section
+            // TODO: Get delta time and use that to modify all movement
+            gs.y += 1;
+
+            if (gs.y >= SCREEN_HEIGHT)
+            {
+                gs.y = 0;
+            }
+            if (gs.x >= SCREEN_WIDTH)
+            {
+                gs.x = 0;
+            }
+            if (gs.x < 0)
+            {
+                gs.x = SCREEN_WIDTH - 1;
+            }
+
+            hewwo_sprite.draw(renderer.get_renderer());
+            renderer.draw_text("FIGHT ME", Vec2(gs.x, gs.y));
+
+            renderer.present();
+        }
+    }
+};
+
+int main(int argc, char *argv[])
+{
+    bool result;
+    Game game;
+    result = game.init();
+    if (!result)
+    {
+        printf("Failed to initialize!\n");
+        return 1;
+    }
+
+    game.game_loop();
+
+    return 0;
 }
