@@ -3,7 +3,7 @@ const int baseDigitalPin = 3;
 const int analogPin = 9;
 
 bool hasNewData = false;
-bool pinValue[maxDigitalButtons];
+bool pinValue[maxDigitalButtons + 1];
 
 // Runs once when you press reset or power the board
 void setup()
@@ -34,41 +34,41 @@ void loop()
 void readInput()
 {
   int availableBytes = Serial.available();
-  if (availableBytes > 0)
+  if (availableBytes >= (maxDigitalButtons + 1))
   {
-    uint8_t buffer[5] = {0};
+    uint8_t buffer[maxDigitalButtons + 1] = {0};
     Serial.readBytes(buffer, sizeof(buffer));
 
+    Serial.write('0' + availableBytes);
     for (int i = 0; i < maxDigitalButtons; ++i)
     {
       pinValue[i] = buffer[i] > 0;
+      Serial.write((pinValue[i] ? 'A' : 'a') + i);
     }
 
     pinValue[maxDigitalButtons] = buffer[maxDigitalButtons];
+    Serial.write(pinValue[maxDigitalButtons]);
 
     hasNewData = true;
+
+    Serial.write('\n');
   }
 }
 
 void setOutput()
 {
-  digitalWrite(LED_BUILTIN, LOW);
-
   if (hasNewData)
   {
     // Update the digital pins, which are packed in the front
     // of the values array.
     for (int i = 0; i < maxDigitalButtons; ++i)
     {
-      digitalWrite(baseDigitalPin + i, pinValue[i] > 0 ? HIGH : LOW);
+      digitalWrite(baseDigitalPin + i, pinValue[i] ? HIGH : LOW);
     }
 
     // Update the analog pin, which is the last value in the
     // array.
     analogWrite(analogPin, pinValue[maxDigitalButtons]);
-    
-    // Debug LED for when we process data.
-    digitalWrite(LED_BUILTIN, HIGH);
 
     // We've processed the new data, so clear the flag.
     hasNewData = false;
