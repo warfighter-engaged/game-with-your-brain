@@ -3,12 +3,13 @@
 #include "game_state.h"
 
 #include <stdio.h>
+#include <memory>
 
 void MainMenuScene::update(float /*deltaTime*/, GameState* gs)
 {
     if (should_continue)
     {
-        gs->switchScene(new GameScene());
+        gs->switchScene(std::make_unique<GameScene>());
     }
     if (should_quit)
     {
