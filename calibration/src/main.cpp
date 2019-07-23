@@ -102,7 +102,11 @@ struct Game
             // TODO: Get the frame delay as delta time
             gs.currentScene->update(0.0f, &gs);
             gs.currentScene->render(renderer);
-            gs.switchScene(std::move(gs.loadScene));
+            if (gs.loadScene)
+            {
+                gs.currentScene = std::move(gs.loadScene);
+            }
+
             renderer.present();
         }
     }
