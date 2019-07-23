@@ -5,15 +5,15 @@
 
 class Command
 {
-  GameState *gs;
+  GameState *_gs;
 
 protected:
   virtual void execute(GameState &) = 0;
 
 public:
   virtual ~Command() {}
-  explicit Command(GameState *gameState) : gs(gameState) {}
-  void execute() { execute(*gs); }
+  explicit Command(GameState *gameState) : _gs(gameState) {}
+  void execute() { execute(*_gs); }
 };
 
 class JumpCommand : public Command

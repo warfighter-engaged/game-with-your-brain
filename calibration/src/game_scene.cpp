@@ -1,6 +1,6 @@
 #include "game_scene.h"
 
-void GameScene::update(float deltaTime)
+void GameScene::update(float /*deltaTime*/)
 {
 }
 void GameScene::render(Renderer &renderer)

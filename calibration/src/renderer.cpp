@@ -76,7 +76,7 @@ bool Renderer::load_media()
     return true;
 }
 
-void Renderer::draw_text(char *text, const Vec2 &position)
+void Renderer::draw_text(const char *text, const Vec2 &position)
 {
     SDL_Color color = {0, 0, 0};
     SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);

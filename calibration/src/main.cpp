@@ -112,7 +112,7 @@ struct Game
     }
 };
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char * /*argv*/[])
 {
     bool result;
     Game game;
