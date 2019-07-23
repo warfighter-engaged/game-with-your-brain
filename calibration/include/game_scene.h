@@ -9,11 +9,11 @@
 class GameScene : public Scene
 {
 private:
-    Sprite hewwoSprite;
+    Sprite springBackground;
 
 public:
-    GameScene() : hewwoSprite(Sprite(WFID("./data/hewwo.bmp"), Vec2(0.0, 0.0))) {}
-
+    //GameScene() : springBackground(Sprite(WFID("./data/art/background_scenery_tiles.bmp"), Vec2(0, 0), Vec2(640, 480), Vec2(20, 20), Vec2(150, 140))) {}
+	GameScene() : springBackground(Sprite(WFID("./data/art/background_scenery_tiles.bmp"), Vec2(0, 0))) {}
     virtual void update(float deltaTime) override;
     virtual void render(Renderer &renderer) override;
 };

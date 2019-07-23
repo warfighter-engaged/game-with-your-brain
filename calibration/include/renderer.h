@@ -27,8 +27,8 @@ public:
     Renderer() : window(nullptr), renderer(nullptr) {}
     bool init();
     bool load_media();
+    void draw_text(const char* text, const Vec2& position);
 
-    void draw_text(const char *text, const Vec2 &position);
     void clear()
     {
         SDL_RenderClear(renderer);

@@ -62,8 +62,7 @@ bool Renderer::load_media()
         printf("Could not open font. SDL_Error: %s\n", SDL_GetError());
         return false;
     }
-
-    if (!Sprite::load_image("./data/hewwo.bmp", renderer))
+    if (!Sprite::load_image("./data/art/background_scenery_tiles.bmp", renderer))
     {
         printf("Could not open image\n");
         return false;
@@ -76,11 +75,11 @@ bool Renderer::load_media()
     return true;
 }
 
-void Renderer::draw_text(const char *text, const Vec2 &position)
+void Renderer::draw_text(const char* text, const Vec2& position)
 {
     SDL_Color color = {0, 0, 0};
-    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Surface* surface = TTF_RenderText_Blended(font, text, color);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
     // We have the text, but we want to display it at the correct (100%) scale.
     // Thus, we need to query how large the source texture is.
