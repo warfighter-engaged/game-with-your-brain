@@ -16,25 +16,30 @@ struct KeyboardInput {
   Command *a;
   Command *d;
   Command *enter;
+  Command *esc;
 
   KeyboardInput(GameState *gs)
       : w(new JumpCommand(gs)), a(new WalkLeftCommand(gs)),
-        d(new WalkRightCommand(gs)), enter(new MenuSelectCommand(gs)) {}
+        d(new WalkRightCommand(gs)), enter(new MenuSelectCommand(gs)), esc(new ExitCommand(gs)) {}
 
   void interpret(SDL_Event const &e) {
     if (e.type == SDL_KEYDOWN) {
       switch (e.key.keysym.sym) {
-      case SDLK_w:
-        w->execute();
-        break;
-      case SDLK_a:
-        a->execute();
-        break;
-      case SDLK_d:
-        d->execute();
-        break;
-      case SDLK_RETURN:
-        enter->execute();
+		  case SDLK_w:
+			w->execute();
+			break;
+		  case SDLK_a:
+			a->execute();
+			break;
+		  case SDLK_d:
+			d->execute();
+			break;
+		  case SDLK_RETURN:
+			enter->execute();
+			break;
+		  case SDLK_ESCAPE:
+			esc->execute();
+			break;
       }
     }
   }
@@ -66,6 +71,8 @@ struct Game {
       printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
       return false;
     }
+
+	SDL_SetWindowFullscreen(window, true);
 
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -101,9 +108,10 @@ struct Game {
 
     KeyboardInput ki(&gs);
 
-    int x = 0, y = 0;
+	int x = 0, y = 0;
 
-    while (!quit) {
+    while (!quit && !gs.shouldExit) {
+
       while (SDL_PollEvent(&e) != 0) {
         if (e.type == SDL_QUIT) {
           quit = true;

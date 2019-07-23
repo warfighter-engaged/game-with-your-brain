@@ -7,6 +7,8 @@ public:
   void walkLeft();
   void walkRight();
   void menuSelect();
+  void exit();
+  bool shouldExit = false;
 };
 
 #endif // WARFIGHTER__GAME_STATE_H__

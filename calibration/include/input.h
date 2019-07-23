@@ -47,4 +47,12 @@ public:
   explicit MenuSelectCommand(GameState *gameState) : Command(gameState) {}
 };
 
+class ExitCommand : public Command {
+protected:
+	void execute(GameState &gs) override { gs.exit(); }
+
+public:
+	explicit ExitCommand(GameState *gameState) : Command(gameState) {}
+};
+
 #endif // WARFIGHTER__INPUT_H__
