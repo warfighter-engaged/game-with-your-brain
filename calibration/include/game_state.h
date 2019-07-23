@@ -2,6 +2,7 @@
 #define WARFIGHTER__GAME_STATE_H__
 
 #include "scene.h"
+#include <memory>
 
 class GameState
 {
@@ -12,21 +13,17 @@ public:
     void menuSelect();
     void exit();
 
-    void switchScene(Scene *newScene)
+    void switchScene(std::unique_ptr<Scene>&& newScene)
     {
-        if (loadScene != nullptr)
-        {
-            delete loadScene;
-        }
-        loadScene = newScene;
+        loadScene = std::move(newScene);
     }
 
     bool shouldExit = false;
     int x = 0;
     int y = 0;
 
-    Scene *currentScene = nullptr;
-    Scene *loadScene = nullptr;
+    std::unique_ptr<Scene> currentScene = nullptr;
+    std::unique_ptr<Scene> loadScene = nullptr;
 };
 
 #endif // WARFIGHTER__GAME_STATE_H__

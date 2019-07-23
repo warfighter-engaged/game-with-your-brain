@@ -12,18 +12,21 @@
 // not 100% sure the best way to do this
 struct KeyboardInput
 {
-    Command *w;
-    Command *a;
-    Command *d;
-    Command *enter;
-    Command *esc;
+    std::unique_ptr<Command> w;
+    std::unique_ptr<Command> a;
+    std::unique_ptr<Command> d;
+    std::unique_ptr<Command> enter;
+    std::unique_ptr<Command> esc;
 
-    KeyboardInput(GameState *gs)
-        : w(new JumpCommand(gs)), a(new WalkLeftCommand(gs)),
-          d(new WalkRightCommand(gs)), enter(new MenuSelectCommand(gs)),
-          esc(new ExitCommand(gs)) {}
+    KeyboardInput(GameState* gs)
+        : w(std::make_unique<JumpCommand>(gs))
+        , a(std::make_unique<WalkLeftCommand>(gs))
+        , d(std::make_unique<WalkRightCommand>(gs))
+        , enter(std::make_unique<MenuSelectCommand>(gs))
+        , esc(std::make_unique<ExitCommand>(gs))
+    {}
 
-    void interpret(SDL_Event const &e)
+    void interpret(SDL_Event const& e)
     {
         if (e.type == SDL_KEYDOWN)
         {
@@ -53,7 +56,8 @@ struct Game
 {
     Renderer renderer;
 
-    Game() {}
+    Game()
+    {}
 
     bool init()
     {
@@ -76,13 +80,12 @@ struct Game
     {
         SDL_Event e;
         GameState gs;
-        gs.currentScene = new GameScene();
+        gs.currentScene = std::make_unique<GameScene>();
 
         KeyboardInput ki(&gs);
 
         while (!gs.shouldExit)
         {
-
             while (SDL_PollEvent(&e) != 0)
             {
                 if (e.type == SDL_QUIT)
@@ -99,20 +102,13 @@ struct Game
             // TODO: Get the frame delay as delta time
             gs.currentScene->update(0.0f);
             gs.currentScene->render(renderer);
-
-            if (gs.loadScene != nullptr)
-            {
-                delete gs.currentScene;
-                gs.currentScene = gs.loadScene;
-                gs.loadScene = nullptr;
-            }
-
+            gs.switchScene(std::move(gs.loadScene));
             renderer.present();
         }
     }
 };
 
-int main(int /*argc*/, char * /*argv*/[])
+int main(int /*argc*/, char* /*argv*/[])
 {
     bool result;
     Game game;
