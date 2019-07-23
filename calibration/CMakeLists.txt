@@ -7,7 +7,7 @@ project(calibration)
 
 set (CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 find_package(SDL2 REQUIRED)
 
@@ -42,5 +42,5 @@ ENDIF()
 
 add_custom_command(TARGET calibration POST_BUILD        # Adds a post-build event to calibration
         COMMAND ${CMAKE_COMMAND} -E copy_directory  # which executes "cmake - E copy_if_different..."
-            "${CMAKE_SOURCE_DIR}/data"      # <--this is in-file
-            "$<TARGET_FILE_DIR:calibration>/data")    
+        "${CMAKE_CURRENT_SOURCE_DIR}/data"      # <--this is in-file
+            "$<TARGET_FILE_DIR:calibration>/data")

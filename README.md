@@ -9,7 +9,15 @@ TODO: Guide users through getting your code up and running on their own system. 
 4.	API references
 
 # Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+TODO: Still have to introduce work on tests
+
+1. Follow the instraction in [calibration/README.md](calibration/README.md) to set up the SDL
+2. Run `vcvars64.bat` - assuming you have VS 2019 community, this should be `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64"`
+3. `mkdir build`
+4. `cd build`
+5. `cmake ..`
+6. `devenv /build Debug Project.sln` - you can also open the solution in visual studio
+7. `.\calibration\Debug\SDL2Test.exe` - or whatever other target you want
 
 # Contribute
 TODO: Explain how other users and developers can contribute to make your code better. 
