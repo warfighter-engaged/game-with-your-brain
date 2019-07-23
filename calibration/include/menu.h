@@ -25,7 +25,7 @@ public:
     {
         printf("Next!\n");
         _selection++;
-        if (_selection >= _options.size())
+        if (_selection >= static_cast<int>(_options.size())) // downcast, but should be ok
         {
             _selection = 0;
         }
@@ -47,7 +47,8 @@ public:
     {
         const float y_offset = 10.0;
         const float x_offset = 10.0;
-        for (int index = 0; index < _options.size(); ++index)
+        const int size = _options.size(); // downcast, but should be ok
+        for (int index = 0; index < size; ++index)
         {
             const float y_pos = (index * 40.0f) + y_offset;
             const float x_pos = x_offset;
