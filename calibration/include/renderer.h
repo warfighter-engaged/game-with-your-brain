@@ -29,6 +29,10 @@ public:
     bool load_media();
 
     void draw_text(char *text, const Vec2 &position);
+    void clear()
+    {
+        SDL_RenderClear(renderer);
+    }
     void present()
     {
         SDL_RenderPresent(renderer);

@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "crc.h"
+#include "game_scene.h"
 #include "game_state.h"
 #include "input.h"
 #include "renderer.h"
@@ -75,10 +76,9 @@ struct Game
     {
         SDL_Event e;
         GameState gs;
+        gs.currentScene = new GameScene();
 
         KeyboardInput ki(&gs);
-
-        Sprite hewwo_sprite(WFID("./data/hewwo.bmp"), Vec2(0.0, 0.0));
 
         while (!gs.shouldExit)
         {
@@ -92,26 +92,20 @@ struct Game
                 ki.interpret(e);
             }
 
-            // Platforming logic
-            // TODO: Extract this into a scene-specific logic section
-            // TODO: Get delta time and use that to modify all movement
-            gs.y += 1;
+            // Clear the renderer
+            renderer.clear();
 
-            if (gs.y >= SCREEN_HEIGHT)
-            {
-                gs.y = 0;
-            }
-            if (gs.x >= SCREEN_WIDTH)
-            {
-                gs.x = 0;
-            }
-            if (gs.x < 0)
-            {
-                gs.x = SCREEN_WIDTH - 1;
-            }
+            // Update and draw the current scene
+            // TODO: Get the frame delay as delta time
+            gs.currentScene->update(0.0f);
+            gs.currentScene->render(renderer);
 
-            hewwo_sprite.draw(renderer.get_renderer());
-            renderer.draw_text("FIGHT ME", Vec2(gs.x, gs.y));
+            if (gs.loadScene != nullptr)
+            {
+                delete gs.currentScene;
+                gs.currentScene = gs.loadScene;
+                gs.loadScene = nullptr;
+            }
 
             renderer.present();
         }

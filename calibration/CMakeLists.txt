@@ -21,6 +21,7 @@ include_directories(include)
 
 add_executable(calibration
     src/main.cpp
+    src/game_scene.cpp
     src/game_state.cpp
     src/renderer.cpp
     src/sprite.cpp
