@@ -3,23 +3,20 @@
 
 void GameState::jump()
 {
-    printf("Jumping!\n");
-    y += 8;
+    currentScene->jump();
 }
 
 void GameState::walkLeft()
 {
-    printf("Walking left\n");
-    x -= 1;
+    currentScene->walkLeft();
 }
 
 void GameState::walkRight()
 {
-    printf("Walking right\n");
-    x += 1;
+    currentScene->walkRight();
 }
 
-void GameState::menuSelect() { printf("Menu select\n"); }
+void GameState::menuSelect() { currentScene->menuSelect(); }
 
 void GameState::exit()
 {

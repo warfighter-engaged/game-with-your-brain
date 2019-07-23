@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "crc.h"
-#include "game_scene.h"
+#include "main_menu_scene.h"
 #include "game_state.h"
 #include "input.h"
 #include "renderer.h"
@@ -80,7 +80,7 @@ struct Game
     {
         SDL_Event e;
         GameState gs;
-        gs.currentScene = std::make_unique<GameScene>();
+        gs.currentScene = std::make_unique<MainMenuScene>();
 
         KeyboardInput ki(&gs);
 
@@ -100,7 +100,7 @@ struct Game
 
             // Update and draw the current scene
             // TODO: Get the frame delay as delta time
-            gs.currentScene->update(0.0f);
+            gs.currentScene->update(0.0f, &gs);
             gs.currentScene->render(renderer);
             gs.switchScene(std::move(gs.loadScene));
             renderer.present();
@@ -108,7 +108,7 @@ struct Game
     }
 };
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(int /*argc*/, char* /*argv*/ [])
 {
     bool result;
     Game game;

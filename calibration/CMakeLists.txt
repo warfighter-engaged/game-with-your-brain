@@ -23,6 +23,7 @@ add_executable(calibration
     src/main.cpp
     src/game_scene.cpp
     src/game_state.cpp
+    src/main_menu_scene.cpp
     src/renderer.cpp
     src/sprite.cpp
     src/vec2.cpp

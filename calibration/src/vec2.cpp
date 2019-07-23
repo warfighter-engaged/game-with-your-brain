@@ -1,19 +1,19 @@
 #include "vec2.h"
 #include <iostream>
 
-inline std::istream &operator>>(std::istream &is, Vec2 &t)
+std::istream& operator>>(std::istream& is, Vec2& t)
 {
     is >> t.e[0] >> t.e[1];
     return is;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Vec2 &t)
+std::ostream& operator<<(std::ostream& os, const Vec2& t)
 {
     os << t.e[0] << " " << t.e[1];
     return os;
 }
 
-inline void Vec2::make_unit_vector()
+void Vec2::make_unit_vector()
 {
     float sqr_len = squared_length();
     if (sqr_len == 0.0)
@@ -25,83 +25,89 @@ inline void Vec2::make_unit_vector()
     e[1] *= k;
 }
 
-inline Vec2 operator+(const Vec2 &v1, const Vec2 &v2)
+Vec2 operator+(const Vec2& v1, const Vec2& v2)
 {
     return Vec2(v1.e[0] + v2.e[0], v1.e[1] + v2.e[1]);
 }
 
-inline Vec2 operator-(const Vec2 &v1, const Vec2 &v2)
+Vec2 operator-(const Vec2& v1, const Vec2& v2)
 {
     return Vec2(v1.e[0] - v2.e[0], v1.e[1] - v2.e[1]);
 }
 
-inline Vec2 operator*(const Vec2 &v1, const Vec2 &v2)
+Vec2 operator*(const Vec2& v1, const Vec2& v2)
 {
     return Vec2(v1.e[0] * v2.e[0], v1.e[1] * v2.e[1]);
 }
 
-inline Vec2 operator/(const Vec2 &v1, const Vec2 &v2)
+Vec2 operator/(const Vec2& v1, const Vec2& v2)
 {
     return Vec2(v1.e[0] / v2.e[0], v1.e[1] / v2.e[1]);
 }
 
-inline Vec2 operator*(float t, const Vec2 &v)
+Vec2 operator*(float t, const Vec2& v)
 {
     return Vec2(t * v.e[0], t * v.e[1]);
 }
 
-inline Vec2 operator*(const Vec2 &v, float t)
+Vec2 operator*(const Vec2& v, float t)
 {
     return Vec2(t * v.e[0], t * v.e[1]);
 }
 
-inline Vec2 operator/(const Vec2 &v, float t)
+Vec2 operator/(const Vec2& v, float t)
 {
     return Vec2(v.e[0] / t, v.e[1] / t);
 }
 
-inline float dot(const Vec2 &v1, const Vec2 &v2)
+float dot(const Vec2& v1, const Vec2& v2)
 {
     return v1.e[0] * v2.e[0] + v1.e[1] * v2.e[1];
 }
 
-inline Vec2 &Vec2::operator+=(const Vec2 &v)
+Vec2& Vec2::operator+=(const Vec2& v)
 {
     e[0] += v.e[0];
     e[1] += v.e[1];
+    return *this;
 }
 
-inline Vec2 &Vec2::operator-=(const Vec2 &v)
+Vec2& Vec2::operator-=(const Vec2& v)
 {
     e[0] -= v.e[0];
     e[1] -= v.e[1];
+    return *this;
 }
 
-inline Vec2 &Vec2::operator*=(const Vec2 &v)
+Vec2& Vec2::operator*=(const Vec2& v)
 {
     e[0] *= v.e[0];
     e[1] *= v.e[1];
+    return *this;
 }
 
-inline Vec2 &Vec2::operator/=(const Vec2 &v)
+Vec2& Vec2::operator/=(const Vec2& v)
 {
     e[0] /= v.e[0];
     e[1] /= v.e[1];
+    return *this;
 }
 
-inline Vec2 &Vec2::operator*=(float t)
+Vec2& Vec2::operator*=(float t)
 {
     e[0] += t;
     e[1] += t;
+    return *this;
 }
 
-inline Vec2 &Vec2::operator/=(float t)
+Vec2& Vec2::operator/=(float t)
 {
     e[0] /= t;
     e[1] /= t;
+    return *this;
 }
 
-inline Vec2 Vec2::unit_vector() const
+Vec2 Vec2::unit_vector() const
 {
     float sqr_len = squared_length();
     if (sqr_len == 0.0)

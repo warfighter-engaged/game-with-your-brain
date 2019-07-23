@@ -27,13 +27,11 @@ bool Renderer::init()
     }
 
     // Create the window.
-    window = SDL_CreateWindow("Calibration", SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH,
-                              SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow(
+        "Calibration", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == nullptr)
     {
-        printf("Window could not be created! SDL_Error: %s\n",
-               SDL_GetError());
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
 
@@ -75,9 +73,9 @@ bool Renderer::load_media()
     return true;
 }
 
-void Renderer::draw_text(const char* text, const Vec2& position)
+void Renderer::draw_text(const char* text, const Vec2& position, uint8_t r, uint8_t g, uint8_t b)
 {
-    SDL_Color color = {0, 0, 0};
+    SDL_Color color = {r, g, b};
     SDL_Surface* surface = TTF_RenderText_Blended(font, text, color);
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 

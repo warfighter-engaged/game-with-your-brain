@@ -19,8 +19,6 @@ public:
     }
 
     bool shouldExit = false;
-    int x = 0;
-    int y = 0;
 
     std::unique_ptr<Scene> currentScene = nullptr;
     std::unique_ptr<Scene> loadScene = nullptr;
