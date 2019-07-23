@@ -3,12 +3,17 @@ const int baseDigitalPin = 3;
 const int analogPin = 9;
 
 bool hasNewData = false;
-bool pinValue[maxDigitalButtons + 1];
+bool pinValue[maxDigitalButtons];
+
+int analogValue = 0;
 
 // Runs once when you press reset or power the board
 void setup()
 {
   Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect.
+  }
 
   memset(pinValue, 0, sizeof(pinValue));
 
@@ -37,7 +42,12 @@ void readInput()
   if (availableBytes >= (maxDigitalButtons + 1))
   {
     uint8_t buffer[maxDigitalButtons + 1] = {0};
-    Serial.readBytes(buffer, sizeof(buffer));
+
+    buffer[0] = Serial.read() - '0';
+    buffer[1] = Serial.read() - '0';
+    buffer[2] = Serial.read() - '0';
+    buffer[3] = Serial.read() - '0';
+    buffer[4] = Serial.read() - '0';
 
     Serial.write('0' + availableBytes);
     for (int i = 0; i < maxDigitalButtons; ++i)
@@ -46,8 +56,8 @@ void readInput()
       Serial.write((pinValue[i] ? 'A' : 'a') + i);
     }
 
-    pinValue[maxDigitalButtons] = buffer[maxDigitalButtons];
-    Serial.write(pinValue[maxDigitalButtons]);
+    analogValue = buffer[4] / (float)9 * (float)255;
+    Serial.write(analogValue);
 
     hasNewData = true;
 
@@ -68,7 +78,7 @@ void setOutput()
 
     // Update the analog pin, which is the last value in the
     // array.
-    analogWrite(analogPin, pinValue[maxDigitalButtons]);
+    analogWrite(analogPin, analogValue);
 
     // We've processed the new data, so clear the flag.
     hasNewData = false;
