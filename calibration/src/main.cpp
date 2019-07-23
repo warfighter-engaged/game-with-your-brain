@@ -4,6 +4,10 @@
 #include "game_state.h"
 #include "input.h"
 
+#define FONT_HEIGHT 32
+
+#include "SDL_ttf.h"
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
@@ -40,6 +44,8 @@ struct Game {
   SDL_Window *window;
   SDL_Surface *screenSurface;
   SDL_Surface *helloWorld;
+  SDL_Renderer *renderer;
+  TTF_Font *font;
   bool quit;
 
   Game() : window(NULL), screenSurface(NULL), helloWorld(NULL), quit(false) {}
@@ -63,18 +69,29 @@ struct Game {
 
     SDL_Init(SDL_INIT_VIDEO);
 
+    // Initialize the SDL_ttf library
+    TTF_Init();
+
     // Get the window surface
     screenSurface = SDL_GetWindowSurface(window);
+
+    // Create a renderer
+    renderer = SDL_CreateRenderer(window, -1, 0);
+
     return true;
   }
 
   bool loadMedia() {
+    // Smiley face image
     helloWorld = SDL_LoadBMP("./data/hewwo.bmp");
     if (helloWorld == NULL) {
       printf("Unable to load image %s! SDL Error: %s\n", "hewwo",
              SDL_GetError());
       return false;
     }
+
+    font = TTF_OpenFont("./data/fonts/corbel.ttf", FONT_HEIGHT);
+
     return true;
   }
 
@@ -84,6 +101,8 @@ struct Game {
 
     KeyboardInput ki(&gs);
 
+    int x = 0, y = 0;
+
     while (!quit) {
       while (SDL_PollEvent(&e) != 0) {
         if (e.type == SDL_QUIT) {
@@ -91,20 +110,58 @@ struct Game {
         }
         ki.interpret(e);
       }
-      // Fill the surface white
-      SDL_FillRect(screenSurface, NULL,
-                   SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-      // Apply the image
-      SDL_BlitSurface(helloWorld, NULL, screenSurface, NULL);
-      // Update the surface
-      SDL_UpdateWindowSurface(window);
+
+      x += 1;
+      y += 1;
+
+      if (x > SCREEN_WIDTH) {
+        x = 0;
+      }
+      if (y > SCREEN_HEIGHT) {
+        y = 0;
+      }
+
+      {
+        SDL_Texture *texture =
+            SDL_CreateTextureFromSurface(renderer, helloWorld);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+
+        SDL_DestroyTexture(texture);
+      }
+
+      {
+        SDL_Color color = {0, 0, 0};
+        SDL_Surface *surface =
+            TTF_RenderText_Blended(font, "Bonjour, mon ami!", color);
+        SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+        int texW = 0;
+        int texH = 0;
+        SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+        SDL_Rect dstrect = {x, y, texW, texH};
+
+        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+        SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
+      }
+      SDL_RenderPresent(renderer);
     }
   }
 
   void close() {
+    // Destroy font
+    TTF_CloseFont(font);
+
     // Deallocate surface
     SDL_FreeSurface(helloWorld);
+
+    // Destroy the renderer
+    SDL_DestroyRenderer(renderer);
+
+    // Destroy the window
     SDL_DestroyWindow(window);
+
+    TTF_Quit();
     SDL_Quit();
   }
 };
