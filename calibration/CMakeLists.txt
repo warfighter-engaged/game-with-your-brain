@@ -30,6 +30,12 @@ add_executable(calibration
 
 
 target_link_libraries(calibration ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARY} ${SDL2_IMAGE_LIBRARIES})
+target_compile_options(calibration PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+        -Wall -Werror -Wextra>
+    $<$<CXX_COMPILER_ID:MSVC>:
+        /W4 /WX /analyze /permissive-
+        >)
 
 
 # We need the SDL2 DLL copied over to the executable
