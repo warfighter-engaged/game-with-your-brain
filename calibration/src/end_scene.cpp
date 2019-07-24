@@ -1,5 +1,6 @@
 #include "end_scene.h"
 
+
 void EndScene::update(float /*deltaTime*/, GameState* /*gs*/)
 {}
 

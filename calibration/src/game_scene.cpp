@@ -20,6 +20,7 @@ void GameScene::jump()
 {
     if (isPlayerGrounded)
     {
+        
         playerSpriteVel -= Vec2(0, jumpForce);
 
         if (level == 1)

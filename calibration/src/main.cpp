@@ -1,4 +1,5 @@
 #include "SDL.h"
+#include <SDL_mixer.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sstream>
@@ -15,7 +16,8 @@
 struct Game
 {
     Renderer renderer;
-
+    Mix_Music *music = NULL;
+    
     Game()
     {}
 
@@ -32,7 +34,10 @@ struct Game
             printf("Media resolution failed\n");
             return false;
         }
-
+        
+        // Initialize Mixer
+        Mix_OpenAudio( 22050, MIX_DEFAULT_FORMAT, 2, 4096 );
+        music = Mix_LoadMUS( "./data/sound/main_theme.mp3" );
         return true;
     }
 
@@ -41,7 +46,7 @@ struct Game
         uint64_t now = SDL_GetPerformanceCounter();
         uint64_t last = 0;
         float deltaTime = 0;
-
+        
         SDL_Event e;
         GameState gs;
         gs.currentScene = std::make_unique<MainMenuScene>();
@@ -51,6 +56,9 @@ struct Game
 
         while (!gs.shouldExit)
         {
+            if(!Mix_PlayingMusic()){
+                Mix_PlayMusic( music, -1 );
+            }
             ki.retrigger();
             si.retrigger();
             while (SDL_PollEvent(&e) != 0)
@@ -61,7 +69,7 @@ struct Game
                 }
                 ki.interpret(e);
             }
-            si.poll_data();
+            //si.poll_data();
 
             last = now;
             now = SDL_GetPerformanceCounter();

@@ -11,18 +11,18 @@ unsigned int myo1_datapoints[MAX_DATAPOINTS] = {};
 unsigned int myo2_datapoints[MAX_DATAPOINTS] = {};
 unsigned int eeg_datapoints[MAX_DATAPOINTS] = {};
 
-int index = 0;
+int wfIndex = 0;
 bool filledArray = false;
 
 void SerialInput::add_datapoint(unsigned int myo1V, unsigned int myo2V, unsigned int eegV)
 {
-    myo1_datapoints[index] = myo1V;
-    myo2_datapoints[index] = myo2V;
-    eeg_datapoints[index] = eegV;
-    if (++index == MAX_DATAPOINTS)
+    myo1_datapoints[wfIndex] = myo1V;
+    myo2_datapoints[wfIndex] = myo2V;
+    eeg_datapoints[wfIndex] = eegV;
+    if (++wfIndex == MAX_DATAPOINTS)
     {
         filledArray = true;
-        index = 0;
+        wfIndex = 0;
     }
 }
 
@@ -96,7 +96,7 @@ void analyze(unsigned int* data, int arrlen, Data& result)
 
 void SerialInput::calculate_thresholds()
 {
-    int arrlen = filledArray ? MAX_DATAPOINTS : index;
+    int arrlen = filledArray ? MAX_DATAPOINTS : wfIndex;
     Data d = {};
     analyze(myo1_datapoints, arrlen, d);
     myo1LowThreshold = (float)(d.lowAvg + 2.0 * d.lowstddev);
@@ -111,7 +111,7 @@ void SerialInput::calculate_thresholds()
 
 void SerialInput::write_thresholds()
 {
-    int arrlen = filledArray ? MAX_DATAPOINTS : index;
+    int arrlen = filledArray ? MAX_DATAPOINTS : wfIndex;
 
     std::ofstream outfile("./thresholds.txt");
 
