@@ -10,7 +10,7 @@ int analogValue = 0;
 // Runs once when you press reset or power the board
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect.
   }
@@ -49,19 +49,20 @@ void readInput()
     buffer[3] = Serial.read() - '0';
     buffer[4] = Serial.read() - '0';
 
-    Serial.write('0' + availableBytes);
+    // Clear out anything else in the rx queue.
+    while (Serial.available())
+    {
+      Serial.read();
+    }
+
     for (int i = 0; i < maxDigitalButtons; ++i)
     {
       pinValue[i] = buffer[i] > 0;
-      Serial.write((pinValue[i] ? 'A' : 'a') + i);
     }
 
-    analogValue = buffer[4] / (float)9 * (float)255;
-    Serial.write(analogValue);
+    analogValue = 255 * buffer[4] / 9;
 
     hasNewData = true;
-
-    Serial.write('\n');
   }
 }
 
