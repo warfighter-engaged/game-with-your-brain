@@ -55,15 +55,13 @@ struct SerialInput
         float myo1Val = 0.0f;
         float myo2Val = 0.0f;
         float eegVal = 0.0f;
-        float noop = 0.0f;
-        float eegAnalog = 0.0f;
 
         iss >> myo1Val;
         iss >> myo2Val;
         iss >> eegVal;
 
         printf("INPUT: %s\n", input.c_str());
-        printf("MYO1: %.2f\nMYO2: %.2f\nEEG: %.2f\nEEG ANALOG: %.2f\n", myo1Val, myo2Val, eegVal, eegAnalog);
+        printf("MYO1: %.2f\nMYO2: %.2f\nEEG: %.2f", myo1Val, myo2Val, eegVal);
 
         if (myo1Val > myo1Threshold && !myo1_down)
         {
