@@ -14,7 +14,7 @@ private:
     SDL_Rect textbox;
 
     Sprite playerSprite;
-    
+    Sprite flagSprite;
     Vec2 playerSpriteVel;
     bool isPlayerGrounded = false;
 
@@ -31,7 +31,13 @@ public:
               Vec2(300, 300),
               Vec2(27, 33),
               Vec2(14, 18),
-              Vec2(27, 33)))     
+              Vec2(27, 33)))
+        , flagSprite(Sprite(
+              WFID("./data/art/goombas.png"),
+              Vec2(200, 300),
+              Vec2(120, 40),
+              Vec2(60, 0),
+              Vec2(60, 20)))
         , textbox(SDL_Rect{0, 400, 700, 100})
         , playerSpriteVel(Vec2(0, 0))
     {}

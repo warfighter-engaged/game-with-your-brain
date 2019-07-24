@@ -92,6 +92,7 @@ void GameScene::render(Renderer& renderer)
 {
     springBackground.draw(renderer.get_renderer());
     playerSprite.draw(renderer.get_renderer());
+    flagSprite.draw(renderer.get_renderer());
     SDL_SetRenderDrawColor(renderer.get_renderer(), 255, 255, 255, 255);
     SDL_RenderFillRect(renderer.get_renderer(), &textbox);
     nextLine(renderer);

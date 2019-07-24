@@ -77,7 +77,11 @@ bool Renderer::load_media()
         printf("Could not open image\n");
         return false;
     }
-
+    if (!Sprite::load_image("./data/art/goombas.png", renderer))
+    {
+        printf("Could not open image\n");
+        return false;
+    }
     return true;
 }
 
