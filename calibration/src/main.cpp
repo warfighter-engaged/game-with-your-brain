@@ -81,15 +81,17 @@ struct Game
 
             renderer.draw_text(oss.str().c_str(), Vec2(0.0, 0.0), 255, 0, 0);
 
+            if (gs.shouldWrite)
+            {
+                si.write_thresholds();
+            }
+
             if (gs.loadScene)
             {
                 gs.currentScene = std::move(gs.loadScene);
             }
             renderer.present();
         }
-
-        // TODO: Move this to final screen
-        si.write_thresholds();
     }
 };
 

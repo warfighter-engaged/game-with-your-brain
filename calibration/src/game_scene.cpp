@@ -22,37 +22,44 @@ void GameScene::jump()
     {
         playerSpriteVel -= Vec2(0, jumpForce);
 
-        if(level == 1){
-            jumpFiveTimes -=1;
+        if (level == 1)
+        {
+            jumpFiveTimes -= 1;
         }
 
-        if(jumpFiveTimes == 0 && level == 1){
+        if (jumpFiveTimes == 0 && level == 1)
+        {
             level = 2;
         }
 
-        if(level == 0){
+        if (level == 0)
+        {
             level += 1;
-        }        
+        }
     }
 }
 
 void GameScene::walkLeft()
 {
     playerSpriteVel += Vec2(-moveSpeed, 0);
-    if(level == 3){
-        leftWalking -=1;
-        if(leftWalking <= 0){
+    if (level == 3)
+    {
+        leftWalking -= 1;
+        if (leftWalking <= 0)
+        {
             level = 4;
         }
-    }    
+    }
 }
 
 void GameScene::walkRight()
 {
     playerSpriteVel += Vec2(moveSpeed, 0);
-    if(level == 2){
-        rightWalking -=1;
-        if(rightWalking <= 0){
+    if (level == 2)
+    {
+        rightWalking -= 1;
+        if (rightWalking <= 0)
+        {
             level = 3;
         }
     }
@@ -93,6 +100,7 @@ void GameScene::update(float deltaTime, GameState* gs)
     {
         printf("Switching...\n");
         gs->switchScene(std::make_unique<EndScene>());
+        gs->shouldWrite = true;
     }
 }
 

@@ -20,6 +20,7 @@ public:
     }
 
     bool shouldExit = false;
+    bool shouldWrite = false;
 
     std::unique_ptr<Scene> currentScene = nullptr;
     std::unique_ptr<Scene> loadScene = nullptr;
