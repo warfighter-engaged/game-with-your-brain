@@ -8,19 +8,25 @@ const char* prompts[] = {"CONCENTRATE to make Mario jump!",
 
 int level = 0;
 
+const float jumpForce = 600;
+const float moveSpeed = 30;
+
 void GameScene::jump()
 {
-    playerSpriteVel += Vec2(0, 20);
+    if (isPlayerGrounded)
+    {
+        playerSpriteVel -= Vec2(0, jumpForce);
+    }
 }
 
 void GameScene::walkLeft()
 {
-    playerSpriteVel += Vec2(-10, 0);
+    playerSpriteVel += Vec2(-moveSpeed, 0);
 }
 
 void GameScene::walkRight()
 {
-    playerSpriteVel += Vec2(10, 0);
+    playerSpriteVel += Vec2(moveSpeed, 0);
 }
 
 void GameScene::menuSelect()
@@ -35,18 +41,24 @@ void GameScene::menuSelect()
 
 void GameScene::update(float deltaTime, GameState* /*gs*/)
 {
+    // Handle gravity
+    playerSpriteVel += Vec2(0, 9);
+
     playerSprite.position += playerSpriteVel * deltaTime;
 
-    // Handle gravity
-    playerSprite.position += Vec2(0, 9);
-
     // Handle downwards
-    if (playerSprite.position.y() > 300.0f)
+    if (playerSprite.position.y() >= 300.0f)
     {
         playerSprite.position[1] = 300.0f;
+        playerSpriteVel[1] = 0.0f;
+        isPlayerGrounded = true;
+    }
+    else
+    {
+        isPlayerGrounded = false;
     }
 
-    playerSpriteVel = Vec2(0, 0);
+    playerSpriteVel[0] = 0.0f;
 }
 void GameScene::render(Renderer& renderer)
 {

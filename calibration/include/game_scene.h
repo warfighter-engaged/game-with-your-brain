@@ -15,6 +15,7 @@ private:
 
     Sprite playerSprite;
     Vec2 playerSpriteVel;
+    bool isPlayerGrounded = false;
 
 public:
     GameScene()

@@ -23,6 +23,8 @@ public:
     {
         execute(*_gs);
     }
+
+    bool retrigger = false;
 };
 
 class JumpCommand : public Command
@@ -50,7 +52,9 @@ protected:
 public:
     explicit WalkLeftCommand(GameState* gameState)
         : Command(gameState)
-    {}
+    {
+        retrigger = true;
+    }
 };
 
 class WalkRightCommand : public Command
@@ -64,7 +68,9 @@ protected:
 public:
     explicit WalkRightCommand(GameState* gameState)
         : Command(gameState)
-    {}
+    {
+        retrigger = true;
+    }
 };
 
 class NextLineCommand : public Command
