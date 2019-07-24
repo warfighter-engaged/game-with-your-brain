@@ -58,7 +58,6 @@ struct SerialInput
         iss >> myo2Val;
         iss >> eegVal;
 
-        printf("INPUT: %s\n", input.c_str());
         printf("MYO1: %u\nMYO2: %u\nEEG: %u\n", myo1Val, myo2Val, eegVal);
 
         if (myo1Val > myo1Threshold && !myo1_down)

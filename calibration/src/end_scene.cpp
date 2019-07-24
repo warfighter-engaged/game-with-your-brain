@@ -1,8 +1,7 @@
 #include "end_scene.h"
 
-void EndScene::update(float deltaTime, GameState* /*gs*/)
-{
-}
+void EndScene::update(float /*deltaTime*/, GameState* /*gs*/)
+{}
 
 void EndScene::render(Renderer& renderer)
 {
@@ -14,5 +13,6 @@ void EndScene::render(Renderer& renderer)
 
 void EndScene::nextLine(Renderer& renderer)
 {
-    renderer.draw_text_wrapped("Congratulations! You're ready to play!", Vec2(5.0f, 405.0f), 690); // width = 700, 5 px padding on each side
+    renderer.draw_text_wrapped(
+        "Congratulations! You're ready to play!", Vec2(5.0f, 405.0f), 690); // width = 700, 5 px padding on each side
 }
