@@ -16,7 +16,7 @@ find_package(SDL2TTF REQUIRED)
 find_library(WIRINGPI_LIBRARIES NAMES wiringPi)
 
 include_directories(${SDL2_INCLUDE_DIRS})
-include_directories(${SDL2IMAGE_INCLUDE_DIR})
+include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 include_directories(${SDL2_MIXER_INCLUDE_DIR})
 include_directories(${SDL2TTF_INCLUDE_DIR})
 
@@ -35,7 +35,12 @@ add_executable(calibration
 )
 
 
-target_link_libraries(calibration ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARY} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${WIRINGPI_LIBRARIES})
+target_link_libraries(calibration ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARY} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+
+IF (LINUX)
+target_link_libraries(calibration ${WIRINGPI_LIBRARIES})
+ENDIF()
+
 target_compile_options(calibration PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
         -Wall -Wextra>
@@ -65,7 +70,7 @@ IF (WIN32)
     # Copy over SDL2_mixer.dll
     add_custom_command(TARGET calibration POST_BUILD        # Adds a post-build event to calibration
         COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-            "$ENV{SDL2MIXERDIR}/${VC_LIB_PATH_SUFFIX}/SDL2_mixer.dll"      # <--this is in-file
+            "$ENV{SDLMIXERDIR}/${VC_LIB_PATH_SUFFIX}/SDL2_mixer.dll"      # <--this is in-file
             $<TARGET_FILE_DIR:calibration>)                 # <--this is out-file path        
     # Copy over SDL2_ttf.dll
     add_custom_command(TARGET calibration POST_BUILD        # Adds a post-build event to calibration
