@@ -14,6 +14,7 @@ private:
     SDL_Rect textbox;
 
     Sprite playerSprite;
+
     Sprite flagSprite;
     Vec2 playerSpriteVel;
     bool isPlayerGrounded = false;
