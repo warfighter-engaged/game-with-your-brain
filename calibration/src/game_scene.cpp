@@ -1,4 +1,5 @@
 #include "game_scene.h"
+#include "end_scene.h"
 
 const char* prompts[] = {"CONCENTRATE to make Mario jump!",
                          "Now jump five more times!",
@@ -67,7 +68,7 @@ void GameScene::menuSelect()
     }
 }
 
-void GameScene::update(float deltaTime, GameState* /*gs*/)
+void GameScene::update(float deltaTime, GameState* gs)
 {
     // Handle gravity
     playerSpriteVel += Vec2(0, 9);
@@ -87,7 +88,14 @@ void GameScene::update(float deltaTime, GameState* /*gs*/)
     }
 
     playerSpriteVel[0] = 0.0f;
+
+    if (level == 4)
+    {
+        printf("Switching...\n");
+        gs->switchScene(std::make_unique<EndScene>());
+    }
 }
+
 void GameScene::render(Renderer& renderer)
 {
     springBackground.draw(renderer.get_renderer());
