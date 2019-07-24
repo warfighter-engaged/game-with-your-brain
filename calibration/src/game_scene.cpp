@@ -26,8 +26,8 @@ void GameScene::walkRight()
 void GameScene::menuSelect()
 {
     level++;
-    size_t numStrings = sizeof(prompts) / sizeof(prompts[0]);
-    if (level >= numStrings)
+    constexpr auto numStrings = sizeof(prompts) / sizeof(prompts[0]);
+    if (level > 0 && static_cast<std::size_t>(level) >= numStrings)
     {
         level = 0;
     }
