@@ -13,6 +13,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_IMAGE REQUIRED)
 find_package(SDL2_MIXER REQUIRED)
 find_package(SDL2TTF REQUIRED)
+find_library(WIRINGPI_LIBRARIES NAMES wiringPi)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2IMAGE_INCLUDE_DIR})
@@ -34,10 +35,10 @@ add_executable(calibration
 )
 
 
-target_link_libraries(calibration ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARY} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
+target_link_libraries(calibration ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARY} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${WIRINGPI_LIBRARIES})
 target_compile_options(calibration PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-        -Wall -Werror -Wextra>
+        -Wall -Wextra>
     $<$<CXX_COMPILER_ID:MSVC>:
         /W4 /WX /analyze /permissive-
         >)
