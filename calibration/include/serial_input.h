@@ -20,9 +20,12 @@ struct SerialInput
 
     SerialPort inputSerial;
 
-    float myo1Threshold = 0.0f;
-    float myo2Threshold = 0.0f;
-    float eegThreshold = 0.0f;
+    float myo1LowThreshold = 0.0f;
+    float myo1HighThreshold = 0.0f;
+    float myo2LowThreshold = 0.0f;
+    float myo2HighThreshold = 0.0f;
+    float eegLowThreshold = 0.0f;
+    float eegHighThreshold = 0.0f;
 
     SerialInput(GameState* gs)
         : myo1(std::make_unique<WalkLeftCommand>(gs))
@@ -60,32 +63,32 @@ struct SerialInput
 
         // printf("MYO1: %u\nMYO2: %u\nEEG: %u\n", myo1Val, myo2Val, eegVal);
 
-        if (myo1Val > myo1Threshold && !myo1_down)
+        if (myo1Val > myo1HighThreshold && !myo1_down)
         {
             myo1_down = true;
             myo1->execute();
         }
-        else if (myo1Val < myo1Threshold && myo1_down)
+        else if (myo1Val < myo1LowThreshold && myo1_down)
         {
             myo1_down = false;
         }
 
-        if (myo2Val > myo2Threshold && !myo2_down)
+        if (myo2Val > myo2HighThreshold && !myo2_down)
         {
             myo2_down = true;
             myo2->execute();
         }
-        else if (myo2Val < myo2Threshold && myo2_down)
+        else if (myo2Val < myo2LowThreshold && myo2_down)
         {
             myo2_down = false;
         }
 
-        if (eegVal > eegThreshold && !eeg_down)
+        if (eegVal > eegHighThreshold && !eeg_down)
         {
             eeg_down = true;
             eeg->execute();
         }
-        else if (eegVal < eegThreshold && eeg_down)
+        else if (eegVal < eegLowThreshold && eeg_down)
         {
             eeg_down = false;
         }

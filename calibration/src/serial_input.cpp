@@ -99,12 +99,14 @@ void SerialInput::calculate_thresholds()
     int arrlen = filledArray ? MAX_DATAPOINTS : index;
     Data d = {};
     analyze(myo1_datapoints, arrlen, d);
-    myo1Threshold = (float)((d.lowAvg + d.highAvg) / 2.0);
+    myo1LowThreshold = (float)(d.lowAvg + 2.0 * d.lowstddev);
+    myo1HighThreshold = (float)(d.highAvg - 2.0 * d.highstddev);
     analyze(myo2_datapoints, arrlen, d);
-    myo2Threshold = (float)((d.lowAvg + d.highAvg) / 2.0);
+    myo2LowThreshold = (float)(d.lowAvg + 2.0 * d.lowstddev);
+    myo2HighThreshold = (float)(d.highAvg - 2.0 * d.highstddev);
     analyze(eeg_datapoints, arrlen, d);
-    eegThreshold = (float)((d.lowAvg + d.highAvg) / 2.0);
-    // printf("Threshold: %.2f, %.2f, %.2f\n", myo1Threshold, myo2Threshold, eegThreshold);
+    myo2LowThreshold = (float)(d.lowAvg + 2.0 * d.lowstddev);
+    myo2HighThreshold = (float)(d.highAvg - 2.0 * d.highstddev);
 }
 
 void SerialInput::write_thresholds()
