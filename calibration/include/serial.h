@@ -8,7 +8,7 @@
 #include <wiringSerial.h>
 #endif
 
-const char text[] = "200 300 400";
+const char text[] = "200 300 400 300 200 450 225 600 451";
 const int texLen = 12;
 
 class SerialPort
@@ -70,7 +70,7 @@ public:
     {
 #if defined(_WIN32) || defined(__APPLE__)
         int res = (int)text[index++];
-        if (index == texLen)
+        if (index == 36)
         {
             index = 0;
         }

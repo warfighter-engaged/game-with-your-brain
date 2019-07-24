@@ -87,6 +87,9 @@ struct Game
             }
             renderer.present();
         }
+
+        // TODO: Move this to final screen
+        si.write_thresholds();
     }
 };
 

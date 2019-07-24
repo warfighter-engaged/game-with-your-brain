@@ -14,13 +14,11 @@ struct SerialInput
     bool myo2_down = false;
     bool eeg_down = false;
 
-    bool passthrough = false;
-
     std::unique_ptr<Command> myo1;
     std::unique_ptr<Command> myo2;
     std::unique_ptr<Command> eeg;
 
-    SerialPort connection;
+    SerialPort inputSerial;
 
     float myo1Threshold = 0.0f;
     float myo2Threshold = 0.0f;
@@ -30,17 +28,17 @@ struct SerialInput
         : myo1(std::make_unique<WalkLeftCommand>(gs))
         , myo2(std::make_unique<WalkRightCommand>(gs))
         , eeg(std::make_unique<JumpCommand>(gs))
-        , connection(SerialPort("/dev/ttyWF1", 115200))
+        , inputSerial(SerialPort("/dev/ttyWF1", 115200))
     {}
 
     void poll_data()
     {
-        int available_chars = connection.dataAvailable();
+        int available_chars = inputSerial.dataAvailable();
         std::string input;
         input.reserve(available_chars);
         for (int i = 0; i < available_chars; ++i)
         {
-            int res = connection.getchar();
+            int res = inputSerial.getchar();
             if (res == -1)
             {
                 printf("Error getting character from serial port\n");
@@ -52,16 +50,16 @@ struct SerialInput
         }
         std::istringstream iss(input);
 
-        float myo1Val = 0.0f;
-        float myo2Val = 0.0f;
-        float eegVal = 0.0f;
+        unsigned int myo1Val = 0;
+        unsigned int myo2Val = 0;
+        unsigned int eegVal = 0;
 
         iss >> myo1Val;
         iss >> myo2Val;
         iss >> eegVal;
 
         printf("INPUT: %s\n", input.c_str());
-        printf("MYO1: %.2f\nMYO2: %.2f\nEEG: %.2f", myo1Val, myo2Val, eegVal);
+        printf("MYO1: %u\nMYO2: %u\nEEG: %u\n", myo1Val, myo2Val, eegVal);
 
         if (myo1Val > myo1Threshold && !myo1_down)
         {
@@ -93,10 +91,7 @@ struct SerialInput
             eeg_down = false;
         }
 
-        if (passthrough)
-        {
-            // Parse the data and send it to the XAC
-        }
+        add_datapoint(myo1Val, myo2Val, eegVal);
     }
 
     void retrigger()
@@ -114,6 +109,9 @@ struct SerialInput
             eeg->execute();
         }
     }
+
+    void write_thresholds();
+    void add_datapoint(unsigned int myo1V, unsigned int myo2V, unsigned int eegV);
 };
 
 #endif // WARFIGHTER__SERIAL_INPUT_H__

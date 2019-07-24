@@ -26,6 +26,7 @@ add_executable(calibration
     src/main_menu_scene.cpp
     src/end_scene.cpp
     src/renderer.cpp
+    src/serial_input.cpp
     src/sprite.cpp
     src/vec2.cpp
 )
