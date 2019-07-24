@@ -26,7 +26,15 @@ void SerialInput::add_datapoint(unsigned int myo1V, unsigned int myo2V, unsigned
     }
 }
 
-void analyze(unsigned int* data, int arrlen, std::ofstream& outfile)
+struct Data
+{
+    double lowAvg;
+    double highAvg;
+    double lowstddev;
+    double highstddev;
+};
+
+void analyze(unsigned int* data, int arrlen, Data& result)
 {
     std::vector<unsigned int> unique_values(data, data + arrlen);
     std::sort(unique_values.begin(), unique_values.end());
@@ -34,8 +42,6 @@ void analyze(unsigned int* data, int arrlen, std::ofstream& outfile)
 
     int midpoint = (int)unique_values.size() / 2;
     unsigned int median = unique_values[midpoint];
-
-    printf("Median: %u\n", median);
 
     double lowAvg = 0.0;
     double highAvg = 0.0;
@@ -58,9 +64,6 @@ void analyze(unsigned int* data, int arrlen, std::ofstream& outfile)
         lowAvg /= lowCount;
     if (highCount > 0)
         highAvg /= highCount;
-
-    printf("Low average: %.2f\nHigh average: %.2f\n", lowAvg, highAvg);
-    outfile << lowAvg << ":" << highAvg << "\n";
 
     double lowstddev = 0.0;
     double highstddev = 0.0;
@@ -85,8 +88,23 @@ void analyze(unsigned int* data, int arrlen, std::ofstream& outfile)
     lowstddev = sqrt(lowstddev);
     highstddev = sqrt(highstddev);
 
-    printf("Low standard deviation: %.2f\nHigh standard deviation: %.2f\n", lowstddev, highstddev);
-    outfile << lowstddev << ":" << highstddev << "\n";
+    result.lowAvg = lowAvg;
+    result.highAvg = highAvg;
+    result.lowstddev = lowstddev;
+    result.highstddev = highstddev;
+}
+
+void SerialInput::calculate_thresholds()
+{
+    int arrlen = filledArray ? MAX_DATAPOINTS : index;
+    Data d = {};
+    analyze(myo1_datapoints, arrlen, d);
+    myo1Threshold = (float)((d.lowAvg + d.highAvg) / 2.0);
+    analyze(myo2_datapoints, arrlen, d);
+    myo2Threshold = (float)((d.lowAvg + d.highAvg) / 2.0);
+    analyze(eeg_datapoints, arrlen, d);
+    eegThreshold = (float)((d.lowAvg + d.highAvg) / 2.0);
+    // printf("Threshold: %.2f, %.2f, %.2f\n", myo1Threshold, myo2Threshold, eegThreshold);
 }
 
 void SerialInput::write_thresholds()
@@ -95,10 +113,15 @@ void SerialInput::write_thresholds()
 
     std::ofstream outfile("./thresholds.txt");
 
+    Data d = {};
+
     printf("MYO 1:\n");
-    analyze(myo1_datapoints, arrlen, outfile);
+    analyze(myo1_datapoints, arrlen, d);
+    outfile << d.lowAvg << " " << d.highAvg << " " << d.lowstddev << " " << d.highstddev << "\n";
     printf("MYO 2:\n");
-    analyze(myo2_datapoints, arrlen, outfile);
+    analyze(myo2_datapoints, arrlen, d);
+    outfile << d.lowAvg << " " << d.highAvg << " " << d.lowstddev << " " << d.highstddev << "\n";
     printf("EEG:\n");
-    analyze(eeg_datapoints, arrlen, outfile);
+    analyze(eeg_datapoints, arrlen, d);
+    outfile << d.lowAvg << " " << d.highAvg << " " << d.lowstddev << " " << d.highstddev << "\n";
 }

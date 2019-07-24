@@ -58,7 +58,7 @@ struct SerialInput
         iss >> myo2Val;
         iss >> eegVal;
 
-        printf("MYO1: %u\nMYO2: %u\nEEG: %u\n", myo1Val, myo2Val, eegVal);
+        // printf("MYO1: %u\nMYO2: %u\nEEG: %u\n", myo1Val, myo2Val, eegVal);
 
         if (myo1Val > myo1Threshold && !myo1_down)
         {
@@ -91,6 +91,7 @@ struct SerialInput
         }
 
         add_datapoint(myo1Val, myo2Val, eegVal);
+        calculate_thresholds();
     }
 
     void retrigger()
@@ -109,6 +110,7 @@ struct SerialInput
         }
     }
 
+    void calculate_thresholds();
     void write_thresholds();
     void add_datapoint(unsigned int myo1V, unsigned int myo2V, unsigned int eegV);
 };

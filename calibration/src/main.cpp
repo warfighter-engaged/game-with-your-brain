@@ -84,6 +84,7 @@ struct Game
             if (gs.shouldWrite)
             {
                 si.write_thresholds();
+                gs.shouldWrite = false;
             }
 
             if (gs.loadScene)
