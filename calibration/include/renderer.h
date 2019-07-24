@@ -37,6 +37,7 @@ public:
         draw_text(text, position, 0, 0, 0);
     }
     void draw_text(const char* text, const Vec2& position, uint8_t r, uint8_t g, uint8_t b);
+    void draw_text_wrapped(const char* text, const Vec2& position, uint32_t width);
     void clear()
     {
         SDL_RenderClear(renderer);

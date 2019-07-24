@@ -110,7 +110,8 @@ struct Game
             now = SDL_GetPerformanceCounter();
             deltaTime = (float)((now - last) / (float)SDL_GetPerformanceFrequency());
 
-            // Clear the renderer
+            // Clear the renderer to black
+            SDL_SetRenderDrawColor(renderer.get_renderer(), 0, 0, 0, 255);
             renderer.clear();
 
             // Update and draw the current scene

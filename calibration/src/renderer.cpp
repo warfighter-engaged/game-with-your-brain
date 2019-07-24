@@ -67,12 +67,34 @@ bool Renderer::load_media()
         printf("Could not open image\n");
         return false;
     }
-    else
+    if (!Sprite::load_image("./data/art/super_mario_bros_sprite_sheet.png", renderer))
     {
-        printf("Loaded hewwo image\n");
+        printf("Could not open image\n");
+        return false;
     }
 
     return true;
+}
+
+void Renderer::draw_text_wrapped(const char* text, const Vec2& position, uint32_t width)
+{
+    SDL_Color color = {0, 0, 0};
+    SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, text, color, (uint32_t)width);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    // We have the text, but we want to display it at the correct (100%) scale.
+    // Thus, we need to query how large the source texture is.
+
+    int texW = 0;
+    int texH = 0;
+    SDL_QueryTexture(texture, nullptr, nullptr, &texW, &texH);
+    SDL_Rect dstrect = {(int)position.x(), (int)position.y(), texW, texH};
+
+    // Now we can actually render the texture.
+    SDL_RenderCopy(renderer, texture, nullptr, &dstrect);
+
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
 }
 
 void Renderer::draw_text(const char* text, const Vec2& position, uint8_t r, uint8_t g, uint8_t b)
