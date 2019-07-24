@@ -14,6 +14,7 @@ private:
     SDL_Rect textbox;
 
     Sprite playerSprite;
+    
     Vec2 playerSpriteVel;
     bool isPlayerGrounded = false;
 
@@ -30,7 +31,7 @@ public:
               Vec2(300, 300),
               Vec2(27, 33),
               Vec2(14, 18),
-              Vec2(27, 33)))
+              Vec2(27, 33)))     
         , textbox(SDL_Rect{0, 400, 700, 100})
         , playerSpriteVel(Vec2(0, 0))
     {}

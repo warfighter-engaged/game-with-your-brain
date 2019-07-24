@@ -67,6 +67,11 @@ bool Renderer::load_media()
         printf("Could not open image\n");
         return false;
     }
+    if (!Sprite::load_image("./data/art/goomba_sprite_sheet.bmp", renderer))
+    {
+        printf("Could not open image\n");
+        return false;
+    }    
     if (!Sprite::load_image("./data/art/super_mario_bros_sprite_sheet.png", renderer))
     {
         printf("Could not open image\n");

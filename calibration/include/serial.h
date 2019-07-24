@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__APPLE__)
 #include <wiringSerial.h>
 #endif
 
@@ -15,14 +15,14 @@ class SerialPort
 {
 private:
     int fd;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
     int index;
 #endif
 
 public:
     SerialPort(const char* device, int baud)
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         printf("Baud: %d\nDevice: %s", baud, device);
         fd = 0;
         index = 0;
@@ -33,7 +33,7 @@ public:
 
     ~SerialPort()
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 #else
         serialClose(fd);
 #endif
@@ -41,7 +41,7 @@ public:
 
     void putchar(unsigned char c)
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         printf("%c", c);
 #else
         serialPutchar(fd, c);
@@ -50,7 +50,7 @@ public:
 
     void puts(char* s)
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         printf("%s", s);
 #else
         serialPuts(fd, c);
@@ -59,7 +59,7 @@ public:
 
     int dataAvailable()
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         return texLen;
 #else
         return serialDataAvail(fd);
@@ -68,7 +68,7 @@ public:
 
     int getchar()
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         int res = (int)text[index++];
         if (index == texLen)
         {
@@ -82,7 +82,7 @@ public:
 
     void flush()
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         printf("Flush\n");
 #else
         serialFlush(fd);

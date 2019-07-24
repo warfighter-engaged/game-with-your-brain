@@ -7,26 +7,54 @@ const char* prompts[] = {"CONCENTRATE to make Mario jump!",
                          "Now combine jumping and moving to reach the\nflag!"};
 
 int level = 0;
+int jumpFiveTimes = 5;
 
 const float jumpForce = 600;
 const float moveSpeed = 30;
+
+int rightWalking = 700;
+int leftWalking = 700;
 
 void GameScene::jump()
 {
     if (isPlayerGrounded)
     {
         playerSpriteVel -= Vec2(0, jumpForce);
+
+        if(level == 1){
+            jumpFiveTimes -=1;
+        }
+
+        if(jumpFiveTimes == 0 && level == 1){
+            level = 2;
+        }
+
+        if(level == 0){
+            level += 1;
+        }        
     }
 }
 
 void GameScene::walkLeft()
 {
     playerSpriteVel += Vec2(-moveSpeed, 0);
+    if(level == 3){
+        leftWalking -=1;
+        if(leftWalking <= 0){
+            level = 4;
+        }
+    }    
 }
 
 void GameScene::walkRight()
 {
     playerSpriteVel += Vec2(moveSpeed, 0);
+    if(level == 2){
+        rightWalking -=1;
+        if(rightWalking <= 0){
+            level = 3;
+        }
+    }
 }
 
 void GameScene::menuSelect()
