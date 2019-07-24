@@ -1,4 +1,4 @@
-#ifndef WARFIGHTER__MENU_H__
+﻿#ifndef WARFIGHTER__MENU_H__
 #define WARFIGHTER__MENU_H__
 
 #include <string>
@@ -45,9 +45,9 @@ public:
 
     void draw(Renderer& renderer)
     {
-        const float y_offset = 10.0;
-        const float x_offset = 10.0;
-        const int size = _options.size(); // downcast, but should be ok
+        const float y_offset = 100.0;
+        const float x_offset = 220.0;
+        const int size = (int)_options.size(); // downcast, but should be ok
         for (int index = 0; index < size; ++index)
         {
             const float y_pos = (index * 40.0f) + y_offset;

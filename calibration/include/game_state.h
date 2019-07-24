@@ -10,6 +10,7 @@ public:
     void jump();
     void walkLeft();
     void walkRight();
+    void nextLine();
     void menuSelect();
     void exit();
 

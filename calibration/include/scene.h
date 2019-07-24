@@ -8,14 +8,21 @@ class GameState;
 class Scene
 {
 public:
-    virtual void update(float deltaTime, GameState *gs) = 0;
-    virtual void render(Renderer &renderer) = 0;
+    virtual void update(float deltaTime, GameState* gs) = 0;
+    virtual void render(Renderer& renderer) = 0;
 
-    virtual void jump() {}
-    virtual void walkLeft() {}
-    virtual void walkRight() {}
-    virtual void menuSelect() {}
-    virtual void exit() {}
+    virtual void jump()
+    {}
+    virtual void walkLeft()
+    {}
+    virtual void walkRight()
+    {}
+    virtual void menuSelect()
+    {}
+    virtual void nextLine()
+    {}
+    virtual void exit()
+    {}
 };
 
 #endif // WARFIGHTER__SCENE_H__

@@ -24,7 +24,7 @@ public:
         SDL_QueryTexture(tex, nullptr, nullptr, &width, &height);
         size = Vec2((float)width, (float)height);
         srcSize = Vec2((float)width, (float)height);
-	}
+    }
 
     Sprite(CRC path, Vec2 pos, Vec2 size, Vec2 srcpos, Vec2 srcsize)
         : spriteId(path)
@@ -73,12 +73,13 @@ public:
         }
     }
 
-private:
-    CRC spriteId;
     Vec2 position;
     Vec2 size;
     Vec2 srcPosition;
     Vec2 srcSize;
+
+private:
+    CRC spriteId;
 
     static std::unordered_map<CRC, SDL_Texture*> images;
 };

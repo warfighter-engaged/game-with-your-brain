@@ -58,4 +58,13 @@ public:
     float e[2];
 };
 
+Vec2 operator+(const Vec2& v1, const Vec2& v2);
+Vec2 operator-(const Vec2& v1, const Vec2& v2);
+Vec2 operator*(const Vec2& v1, const Vec2& v2);
+Vec2 operator/(const Vec2& v1, const Vec2& v2);
+Vec2 operator*(float t, const Vec2& v);
+Vec2 operator*(const Vec2& v, float t);
+Vec2 operator/(const Vec2& v, float t);
+float dot(const Vec2& v1, const Vec2& v2);
+
 #endif // WARFIGHTER__VEC2_H__

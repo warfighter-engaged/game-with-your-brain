@@ -9,15 +9,20 @@ void MainMenuScene::update(float /*deltaTime*/, GameState* gs)
 {
     if (should_continue)
     {
+        printf("Switching...\n");
         gs->switchScene(std::make_unique<GameScene>());
+
+        should_continue = false;
     }
     if (should_quit)
     {
         gs->exit();
+        should_quit = false;
     }
 }
 void MainMenuScene::render(Renderer& renderer)
 {
+    summerBackground.draw(renderer.get_renderer());
     menu.draw(renderer);
 }
 void MainMenuScene::walkLeft()

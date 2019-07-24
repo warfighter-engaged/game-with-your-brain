@@ -11,14 +11,21 @@ class GameScene : public Scene
 {
 private:
     Sprite springBackground;
+    SDL_Rect textbox;
 
 public:
-    //GameScene() : springBackground(Sprite(WFID("./data/art/background_scenery_tiles.bmp"), Vec2(0, 0), Vec2(640, 480), Vec2(20, 20), Vec2(150, 140))) {}
     GameScene()
-        : springBackground(Sprite(WFID("./data/art/background_scenery_tiles.bmp"), Vec2(0, 0)))
+        : springBackground(Sprite(
+              WFID("./data/art/background_scenery_tiles.bmp"),
+              Vec2(0, 0),
+              Vec2(640, 480),
+              Vec2(20, 20),
+              Vec2(150, 140)))
+        , textbox(SDL_Rect{0, 400, 700, 100})
     {}
     virtual void update(float deltaTime, GameState* gs) override;
     virtual void render(Renderer& renderer) override;
+    virtual void nextLine();
 };
 
 #endif // WARFIGHTER__GAME_SCENE_H__

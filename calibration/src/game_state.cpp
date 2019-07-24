@@ -16,7 +16,15 @@ void GameState::walkRight()
     currentScene->walkRight();
 }
 
-void GameState::menuSelect() { currentScene->menuSelect(); }
+void GameState::menuSelect()
+{
+    currentScene->menuSelect();
+}
+
+void GameState::nextLine()
+{
+    currentScene->nextLine();
+}
 
 void GameState::exit()
 {

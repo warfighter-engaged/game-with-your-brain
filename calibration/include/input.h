@@ -67,6 +67,20 @@ public:
     {}
 };
 
+class NextLineCommand : public Command
+{
+protected:
+    void execute(GameState& gs) override
+    {
+        gs.nextLine();
+    }
+
+public:
+    explicit NextLineCommand(GameState* gameState)
+        : Command(gameState)
+    {}
+};
+
 class MenuSelectCommand : public Command
 {
 protected:

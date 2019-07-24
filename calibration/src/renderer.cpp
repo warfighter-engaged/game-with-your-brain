@@ -35,11 +35,13 @@ bool Renderer::init()
         return false;
     }
 
+#if 0
     if (SDL_SetWindowFullscreen(window, true) < 0)
     {
         printf("Window could not be set to fullscreen! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
+#endif
 
     // Create a renderer
     renderer = SDL_CreateRenderer(window, -1, 0);

@@ -1,5 +1,7 @@
 #include "SDL.h"
 #include <stdio.h>
+#include <stdint.h>
+#include <sstream>
 
 #include "crc.h"
 #include "main_menu_scene.h"
@@ -15,6 +17,7 @@ struct KeyboardInput
     std::unique_ptr<Command> w;
     std::unique_ptr<Command> a;
     std::unique_ptr<Command> d;
+    std::unique_ptr<Command> t;
     std::unique_ptr<Command> enter;
     std::unique_ptr<Command> esc;
 
@@ -24,6 +27,7 @@ struct KeyboardInput
         , d(std::make_unique<WalkRightCommand>(gs))
         , enter(std::make_unique<MenuSelectCommand>(gs))
         , esc(std::make_unique<ExitCommand>(gs))
+        , t(std::make_unique<NextLineCommand>(gs))
     {}
 
     void interpret(SDL_Event const& e)
@@ -40,6 +44,9 @@ struct KeyboardInput
                 break;
             case SDLK_d:
                 d->execute();
+                break;
+            case SDLK_t:
+                t->execute();
                 break;
             case SDLK_RETURN:
                 enter->execute();
@@ -78,6 +85,10 @@ struct Game
 
     void game_loop()
     {
+        uint64_t now = SDL_GetPerformanceCounter();
+        uint64_t last = 0;
+        float deltaTime = 0;
+
         SDL_Event e;
         GameState gs;
         gs.currentScene = std::make_unique<MainMenuScene>();
@@ -95,18 +106,27 @@ struct Game
                 ki.interpret(e);
             }
 
+            last = now;
+            now = SDL_GetPerformanceCounter();
+            deltaTime = (float)((now - last) / (float)SDL_GetPerformanceFrequency());
+
             // Clear the renderer
             renderer.clear();
 
             // Update and draw the current scene
             // TODO: Get the frame delay as delta time
-            gs.currentScene->update(0.0f, &gs);
+            gs.currentScene->update(deltaTime, &gs);
             gs.currentScene->render(renderer);
+
+            std::ostringstream oss;
+            oss << "FPS: " << 1.0 / deltaTime;
+
+            renderer.draw_text(oss.str().c_str(), Vec2(0.0, 0.0), 255, 0, 0);
+
             if (gs.loadScene)
             {
                 gs.currentScene = std::move(gs.loadScene);
             }
-
             renderer.present();
         }
     }
