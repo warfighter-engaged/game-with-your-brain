@@ -1,6 +1,7 @@
 const int maxDigitalButtons = 4;
 const int baseDigitalPin = 3;
 const int analogPin = 9;
+const int referenceAnalogPin = 2;
 
 bool hasNewData = false;
 bool pinValue[maxDigitalButtons];
@@ -80,6 +81,7 @@ void setOutput()
 
     // Update the analog pin, which is the last value in the
     // array.
+    analogWrite(referenceAnalogPin, 0);
     analogWrite(analogPin, analogValue);
 
     //analogWrite(9, 51 * 0);
