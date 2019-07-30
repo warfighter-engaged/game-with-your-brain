@@ -32,5 +32,5 @@ Once the calibration app is moved to an external device (XBox/PC) we can start m
 
 ## TODO
 
-[ ] Convert everything over to use `embedded-hal` - this way the conversion between microcontrollers relies solely upon switching the driver. <https://github.com/rust-embedded/linux-embedded-hal>
-[ ] Include an ADC driver to retrieve signals from the MYO sensors <https://github.com/pcein/adc-mcp3008> & <http://pramode.in/2018/02/24/an-introduction-to-writing-embedded-hal-based-drivers-in-rust/>
+- [ ] Convert everything over to use `embedded-hal` - this way the conversion between microcontrollers relies solely upon switching the driver. <https://github.com/rust-embedded/linux-embedded-hal>
+- [ ] Include an ADC driver to retrieve signals from the MYO sensors <https://github.com/pcein/adc-mcp3008> & <http://pramode.in/2018/02/24/an-introduction-to-writing-embedded-hal-based-drivers-in-rust/>
