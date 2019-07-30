@@ -1,45 +1,36 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# wfpi
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+> Brain-Body Interface On Raspberry Pi
 
-# Build and Test
-TODO: Still have to introduce work on tests
+## Installation
 
-1. Follow the instraction in [calibration/README.md](calibration/README.md) to set up the SDL
-2. Run `vcvars64.bat` - assuming you have VS 2019 community, this should be `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64"`
-3. `mkdir build`
-4. `cd build`
-5. `cmake ..`
-6. `devenv /build Debug Project.sln` - you can also open the solution in visual studio
-7. `.\calibration\Debug\SDL2Test.exe` - or whatever other target you want
+This project uses nightly rust - this will make it easier to eventually transition to a `no_std` environment for embedded deployment. Rust should automatically switch to the nightly channel when your CWD is inside this project folder, thanks to the `rust-toolchain` file.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+### Clippy (Rust Linter)
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
-
-# Git command-line
-
-To get your local changes
-```
-!git log  --decorate --parents -p -m -t HEAD --not origin/master^ > log.mod.log
+```sh
+rustup component add clippy
 ```
 
-To get status of your repo and get tree view of your local and origin branches
-```
-!git status -vv > log.diff.log ; git log --branches --decorate --parents --oneline --graph --not origin/master^ > log.log
+### Cross-Compilation
+
+These installation steps require a gcc cross-compilation linker. The instructions provide details for a Linux environment (including WSL).
+
+To cross-compile for a Raspberry Pi target, we specify the `armv7-unknown-linux-gnueabihf` target in `.cargo/config`. This also specifies a gcc cross-compilation linker to use. To install the linker:
+
+```sh
+sudo apt-get install gcc-multilib-arm-linux-gnueabihf
 ```
 
-To see your branches
-```
-!git branch -a | sed -n -r -e '/lidener/ {s/^[^[:alnum:]]+//;s/remotes\/origin\///;p}' | sort -u > log.diff.log
-```
+Once these are set, you can run `cargo build` and build a target for the Raspberry Pi!
+
+## Plans
+
+Current functionality is built for a Raspberry Pi model 2/3/4. Raspberry Pi models 3 and 4 use ARMv8 processors, but ARMv8 is compatible with ARMv7, so there's not much difference. However, we can also target Raspberry Pi models 3 and 4 by specifying the AARCH64 architecture (this is what LLVM and Rust call ARMv8). If we want to target Raspberry Pi Zero, we can also target `arm-unknown-linux-gnueabihf` - however, as we're using Raspberry Pi as a stepping-stone to embedded devices, changing targets doesn't strike me as super necessary.
+
+Once the calibration app is moved to an external device (XBox/PC) we can start making this application into a `no_std` application suitable for use on embedded hardware. For details about Rust development on embedded devices, see <https://rust-embedded.github.io/book/>.
+
+## TODO
+
+[ ] Convert everything over to use `embedded-hal` - this way the conversion between microcontrollers relies solely upon switching the driver. <https://github.com/rust-embedded/linux-embedded-hal>
+[ ] Include an ADC driver to retrieve signals from the MYO sensors <https://github.com/pcein/adc-mcp3008> & <http://pramode.in/2018/02/24/an-introduction-to-writing-embedded-hal-based-drivers-in-rust/>
