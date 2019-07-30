@@ -45,7 +45,7 @@ pub fn main() -> Result<()> {
     let eeg_tx = tx.clone();
     let eeg_run = running.clone();
     let eeg_join = std::thread::spawn(move || {
-        let mut mindwave = eeg::Mindwave::init()?;
+        let mut mindwave = eeg::Mindwave::init().expect("failed to initialize mindwave");
         while eeg_run.load(Ordering::SeqCst) {
             mindwave.update().expect("failed to update mindwave");
             if mindwave.has_new_data() {
