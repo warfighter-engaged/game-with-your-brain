@@ -1,4 +1,4 @@
 {
-    "terminal.integrated.shell.windows": "C:\\WINDOWS\\sysnative\\bash.exe",
-    "rust.target": "armv7-unknown-linux-gnueabihf"
+    "rust.target": "armv7-unknown-linux-gnueabihf",
+    "rust-client.useWSL": true
 }

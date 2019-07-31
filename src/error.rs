@@ -17,6 +17,10 @@ pub enum WfpiError {
     #[fail(display = "threading error: {}", err)]
     ThreadingError {
         err: std::sync::mpsc::RecvError,
+    },
+    #[fail(display = "spi error: {}", err)]
+    SpiError {
+        err: rppal::spi::Error,
     }
 }
 
@@ -41,6 +45,12 @@ impl From<rppal::gpio::Error> for WfpiError {
 impl From<std::sync::mpsc::RecvError> for WfpiError {
     fn from(err: std::sync::mpsc::RecvError) -> WfpiError {
         WfpiError::ThreadingError { err }
+    }
+}
+
+impl From<rppal::spi::Error> for WfpiError {
+    fn from(err: rppal::spi::Error) -> WfpiError {
+        WfpiError::SpiError { err }
     }
 }
 

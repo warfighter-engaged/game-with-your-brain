@@ -18,8 +18,8 @@ use rppal::system::DeviceInfo;
 
 enum DeviceSignal {
     Eeg(u8, u8, u8),
-    Myo1(u8),
-    Myo2(u8),
+    Myo1(u16),
+    Myo2(u16),
 }
 
 pub fn main() -> Result<()> {
@@ -58,26 +58,23 @@ pub fn main() -> Result<()> {
         }
     });
 
-    let myo1_tx = tx.clone();
-    let myo1_run = running.clone();
-    let myo1_join = std::thread::spawn(move || {
-        while myo1_run.load(Ordering::SeqCst) {
-            let res = myo1_tx.send(DeviceSignal::Myo1(200));
-            if res.is_err() {
-                println!("Failed to send data");
-                break;
-            }
-        }
-    });
-
-    let myo2_tx = tx.clone();
-    let myo2_run = running.clone();
-    let myo2_join = std::thread::spawn(move || {
-        while myo2_run.load(Ordering::SeqCst) {
-            let res = myo2_tx.send(DeviceSignal::Myo2(100));
-            if res.is_err() {
-                println!("Failed to send data");
-                break;
+    let myo_tx = tx.clone();
+    let myo_run = running.clone();
+    let myo_join = std::thread::spawn(move || {
+        let mut myo_reader = myo::MyoReader::init().expect("Myo reader failed to initialize");
+        while myo_run.load(Ordering::SeqCst) {
+            myo_reader.update().expect("failed to update myo");
+            if myo_reader.has_new_data() {
+                let mut res = myo_tx.send(DeviceSignal::Myo1(myo_reader.get_value(myo::Side::Left)));
+                if res.is_err() {
+                    println!("Failed to send data");
+                    break;
+                }
+                res = myo_tx.send(DeviceSignal::Myo2(myo_reader.get_value(myo::Side::Right)));
+                if res.is_err() {
+                    println!("Failed to send data");
+                    break;
+                }
             }
         }
     });
@@ -99,8 +96,7 @@ pub fn main() -> Result<()> {
 
     // Join all the threads - waits for anything they need to clean up to finish before we do any cleanup from the main thread
     eeg_join.join().expect("EEG thread failed to join");
-    myo1_join.join().expect("Myo 1 thread failed to join");
-    myo2_join.join().expect("Myo 2 thread failed to join");
+    myo_join.join().expect("Myo thread failed to join");
 
     // Cleanup phase
 
