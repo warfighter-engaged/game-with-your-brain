@@ -3,7 +3,6 @@
 mod eeg;
 mod error;
 mod myo;
-mod pins;
 mod springboard;
 
 pub use error::*;
@@ -79,16 +78,21 @@ pub fn main() -> Result<()> {
         }
     });
 
+    let mut output = springboard::Springboard::init().expect("failed to connect to XAC");
+
     while running.load(Ordering::SeqCst) {
         let data = rx.recv()?;
         match data {
             DeviceSignal::Eeg(attention, meditation, signal_quality) => {
+                output.update_trigger(attention).expect("failed to write to XAC");
                 println!("Received EEG data: {} | {} | {}", attention, meditation, signal_quality);
             }
             DeviceSignal::Myo1(val) => {
+                output.update_left_btn(val > 200);
                 println!("Myo 1: {}", val);
             }
             DeviceSignal::Myo2(val) => {
+                output.update_right_btn(val > 200);
                 println!("Myo 2: {}", val);
             }
         }

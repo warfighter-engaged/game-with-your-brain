@@ -21,7 +21,11 @@ pub enum WfpiError {
     #[fail(display = "spi error: {}", err)]
     SpiError {
         err: rppal::spi::Error,
-    }
+    },
+    #[fail(display = "pwm error: {}", err)]
+    PwmError {
+        err: rppal::pwm::Error,
+    },
 }
 
 impl From<rppal::uart::Error> for WfpiError {
@@ -51,6 +55,12 @@ impl From<std::sync::mpsc::RecvError> for WfpiError {
 impl From<rppal::spi::Error> for WfpiError {
     fn from(err: rppal::spi::Error) -> WfpiError {
         WfpiError::SpiError { err }
+    }
+}
+
+impl From<rppal::pwm::Error> for WfpiError {
+    fn from(err: rppal::pwm::Error) -> WfpiError {
+        WfpiError::PwmError { err }
     }
 }
 
