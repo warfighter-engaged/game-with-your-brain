@@ -12,7 +12,8 @@
 //! * SCLK: BCM GPIO 11 (physical pin 23)
 //! * SS: s0 BCM GPIO 8 (physical pin 24), Ss1 BCM GPIO 7 (physical pin 26)
 //! 
-//! Here we assume that the left MYO sensor
+//! Here we assume that the left MYO sensor is attached to channel 0, and the right sensor is
+//! attached to channel 1.
 
 use crate::Result;
 

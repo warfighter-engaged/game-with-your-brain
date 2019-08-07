@@ -13,7 +13,7 @@ use std::time::Instant;
 use std::time::Duration;
 use rppal::uart::{Parity, Uart};
 
-const BAUDRATE: u32 = 57600;
+const BAUDRATE: u32 = 57_600;
 
 pub struct Mindwave {
     debug: bool,
@@ -33,7 +33,14 @@ impl Mindwave {
     pub fn init() -> Result<Self> {
         // Connect to the primary UART and configure it according to the Arduino defaults:
         // 8 data bits, no parity, 1 stop bit (https://www.arduino.cc/reference/en/language/functions/communication/serial/begin/)
-        let uart = Uart::new(BAUDRATE, Parity::None, 8, 1)?;
+        let mut uart = Uart::new(BAUDRATE, Parity::None, 8, 1)?;
+
+        // Flush the input
+        let input_len = uart.input_len()?;
+        for _ in 0..input_len {
+            let mut buffer = [0u8; 1];
+            uart.read(&mut buffer)?;
+        }
 
         Ok(Self {
             debug: false,
@@ -54,10 +61,10 @@ impl Mindwave {
         self.new_packet = false;
 
         // Look for sync bytes
-        if !self.read_first_byte()? == 0xAA {
+        if self.read_first_byte()? != 0xAA {
             return Ok(());
         }
-        if !self.read_one_byte()? == 0xAA {
+        if self.read_one_byte()? != 0xAA {
             return Ok(());
         }
 
@@ -67,16 +74,18 @@ impl Mindwave {
             return Ok(()); // TODO: Return err
         }
 
-        let mut generated_checksum = 0;
+        use std::num::Wrapping;
+
+        let mut generated_checksum: Wrapping<u8> = Wrapping(0);
         for i in 0..payload_length {
             self.payload_data[i as usize] = self.read_one_byte()?;
-            generated_checksum += self.payload_data[i as usize];
+            generated_checksum += Wrapping(self.payload_data[i as usize]);
         }
 
         let checksum = self.read_one_byte()?;
-        generated_checksum = 0xFF - generated_checksum; // Take one's complement of generated checksum
+        generated_checksum = Wrapping(0xFF) - generated_checksum; // Take one's complement of generated checksum
 
-        if checksum != generated_checksum {
+        if checksum != generated_checksum.0 {
             println!("!!! CHECKSUM ERROR !!!");
             return Ok(()); // TODO: Return err
         }
@@ -121,8 +130,6 @@ impl Mindwave {
                 print!(" Attention: {}", self.attention);
                 print!(" Meditation: {}", self.meditation);
                 println!(" Time since last packet: {}", dur.as_millis() as f32 / 1000f32);
-            } else {
-                println!("{}", self.attention);
             }
 
             self.last_received_packet = now;
@@ -207,6 +214,7 @@ impl Mindwave {
         if self.uart.read(&mut buffer)? > 0 {
             Ok(buffer[0])
         } else {
+            println!("!!!ERROR!!! read_one_byte did not read a byte");
             Ok(0)
         }
     }

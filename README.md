@@ -19,6 +19,7 @@ These installation steps require a gcc cross-compilation linker. The instruction
 To cross-compile for a Raspberry Pi target, we specify the `armv7-unknown-linux-gnueabihf` target in `.cargo/config`. This also specifies a gcc cross-compilation linker to use. To install the linker:
 
 ```sh
+rustup target add armv7-unknown-linux-gnueabihf
 sudo apt-get install gcc-multilib-arm-linux-gnueabihf
 ```
 

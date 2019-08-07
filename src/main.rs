@@ -89,11 +89,11 @@ pub fn main() -> Result<()> {
             }
             DeviceSignal::Myo1(val) => {
                 output.update_left_btn(val > 200);
-                println!("Myo 1: {}", val);
+                // println!("Myo 1: {}", val);
             }
             DeviceSignal::Myo2(val) => {
                 output.update_right_btn(val > 200);
-                println!("Myo 2: {}", val);
+                // println!("Myo 2: {}", val);
             }
         }
     }
