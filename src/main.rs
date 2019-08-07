@@ -46,11 +46,15 @@ pub fn main() -> Result<()> {
     let eeg_join = std::thread::spawn(move || {
         let mut mindwave = eeg::Mindwave::init().expect("failed to initialize mindwave");
         while eeg_run.load(Ordering::SeqCst) {
-            mindwave.update().expect("failed to update mindwave");
+            if let Err(err) = mindwave.update() {
+                println!("failed to update mindwave: {}", err);
+                println!("sleeping for 5 seconds...");
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                continue;
+            }
             if mindwave.has_new_data() {
-                let res = eeg_tx.send(DeviceSignal::Eeg(mindwave.get_attention(), mindwave.get_meditation(), mindwave.get_quality()));
-                if res.is_err() {
-                    println!("Failed to send data"); // This happens if the receiver has already hung up. Not really an error, but we don't want to keep shouting at a hung-up receiver, so we just break the loop.
+                if let Err(_err) = eeg_tx.send(DeviceSignal::Eeg(mindwave.get_attention(), mindwave.get_meditation(), mindwave.get_quality())) {
+                    println!("failed to send data"); // This happens if the receiver has already hung up. Not really an error, but we don't want to keep shouting at a hung-up receiver, so we just break the loop.
                     break;
                 }
             }
@@ -62,23 +66,35 @@ pub fn main() -> Result<()> {
     let myo_join = std::thread::spawn(move || {
         let mut myo_reader = myo::MyoReader::init().expect("Myo reader failed to initialize");
         while myo_run.load(Ordering::SeqCst) {
-            myo_reader.update().expect("failed to update myo");
+            if let Err(err) = myo_reader.update() {
+                println!("failed to update myo: {}", err);
+                println!("sleeping for 5 seconds...");
+                std::thread::sleep(std::time::Duration::from_secs(5)); // TODO: Look for ways to interrupt this from a Ctrl-C signal.
+                continue;
+            }
             if myo_reader.has_new_data() {
-                let mut res = myo_tx.send(DeviceSignal::Myo1(myo_reader.get_value(myo::Side::Left)));
-                if res.is_err() {
-                    println!("Failed to send data");
+                if let Err(_err) = myo_tx.send(DeviceSignal::Myo1(myo_reader.get_value(myo::Side::Left))) {
+                    println!("failed to send data");
                     break;
                 }
-                res = myo_tx.send(DeviceSignal::Myo2(myo_reader.get_value(myo::Side::Right)));
-                if res.is_err() {
-                    println!("Failed to send data");
+                if let Err(_err) = myo_tx.send(DeviceSignal::Myo2(myo_reader.get_value(myo::Side::Right))) {
+                    println!("failed to send data");
                     break;
                 }
             }
         }
     });
 
-    let mut output = springboard::Springboard::init().expect("failed to connect to XAC");
+    let mut output = {
+        let mut res = springboard::Springboard::init();
+        while res.is_err() && running.load(Ordering::SeqCst) {
+            println!("failed to connect to XAC: {}", res.err().unwrap());
+            println!("sleeping for 5 seconds...");
+            std::thread::sleep(std::time::Duration::from_secs(5));
+            res = springboard::Springboard::init();
+        }
+        res.unwrap()
+    };
 
     while running.load(Ordering::SeqCst) {
         let data = rx.recv()?;
