@@ -52,8 +52,8 @@ impl Springboard {
     }
 
     /// Update the trigger pull to a value
-    pub fn update_trigger(&mut self, value: u8) -> Result<()> {
-        self.trigger.set_duty_cycle(f64::from(value) / 100f64)?;
+    pub fn update_trigger(&mut self, value: f64) -> Result<()> {
+        self.trigger.set_duty_cycle(value / 100f64)?;
         self.trigger_ref.set_duty_cycle(0.0f64)?;
         Ok(())
     }

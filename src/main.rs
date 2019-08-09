@@ -104,10 +104,22 @@ pub fn main() -> Result<()> {
         let data = rx.recv()?;
         match data {
             DeviceSignal::Eeg(attention, meditation, signal_quality) => {
+                last_data[0] = u16::from(attention);
+                last_data[1] = u16::from(meditation);
+                last_data[2] = u16::from(signal_quality);
+
+                // Shift attention to only count a range from 20-80
+                // Values outside that range are compressed to 0 or 100
+                let attention = f64::from(attention);
+                let attention = if attention < 20f64 {
+                    20f64
+                } else if attention > 80f64 {
+                    80f64
+                } else {
+                    attention
+                };
+                let attention = (attention - 20f64) * (100f64 / 60f64);
                 output.update_trigger(attention).expect("failed to write to XAC");
-                last_data[0] = attention as u16;
-                last_data[1] = meditation as u16;
-                last_data[2] = signal_quality as u16;
             }
             DeviceSignal::Myo1(val) => {
                 output.update_left_btn(val > 200);
