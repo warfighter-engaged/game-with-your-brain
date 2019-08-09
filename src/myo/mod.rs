@@ -21,7 +21,7 @@ use rppal::spi;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
-const SPI_MAX_CLOCK_SPEED: u32 = 9600; // This approximates the Arduino ADC default sample rate
+const SPI_MAX_CLOCK_SPEED: u32 = 1000; // This approximates the Arduino ADC default sample rate
 const SPI_MODE: spi::Mode = spi::Mode::Mode0;
 
 #[derive(Debug, Clone)]
@@ -58,23 +58,22 @@ impl MyoReader {
         //             byte3 = b7 - b0
         // after conversion merge read_buffer[1] and read_buffer[2] to get final result
 
-        let mut write_buffer: [u8; 3] = [0u8; 3];
+        let mut command: u8 = 0b11 << 6;
+        command |= (channel & 0x07) << 3;
 
-        write_buffer[0] = 1; // first byte transmitted -> start bit
-        write_buffer[1] = 0b1000_0000 | ((channel & 7) << 4); // second byte transmitted -> (SGL/DIF = 1, D2,D1,D0 = channel)
-        write_buffer[2] = 0; // third byte transmitted...don't care
+        let tx_buf = [command, 0x0, 0x0];
+        let mut rx_buf = [0_u8; 3];
 
-        let mut read_buffer: [u8; 3] = [0u8; 3];
+        self.spi.transfer(&mut rx_buf, &tx_buf)?;
 
-        self.spi.transfer(&mut read_buffer, &write_buffer)?;
+        let mut result = (rx_buf[0] as u16 & 0x01) << 9;
+        result |= (rx_buf[1] as u16 & 0xFF) << 1;
+        result |= (rx_buf[2] as u16 & 0x80) >> 7;
+        result &= 0x3FF;
 
-        let mut adc_val: u16;
-        adc_val = (u16::from(read_buffer[1]) << 8) & 0b11_0000_0000; // merge read_buffer[1] and read_buffer[2] to get result
-        adc_val |= u16::from(read_buffer[2]) & 0xff;
-
-        if self.values[channel as usize] != adc_val {
+        if self.values[channel as usize] != result {
             self.new_data = true;
-            self.values[channel as usize] = adc_val;
+            self.values[channel as usize] = result;
         }
 
         Ok(())

@@ -26,6 +26,14 @@ pub enum WfpiError {
     PwmError {
         err: rppal::pwm::Error,
     },
+    #[fail(display = "i/o error: {}", err)]
+    IoError {
+        err: std::io::Error,
+    },
+    #[fail(display = "generic error: {}", err)]
+    GenericError {
+        err: failure::Error,
+    },
 }
 
 impl From<rppal::uart::Error> for WfpiError {
@@ -61,6 +69,18 @@ impl From<rppal::spi::Error> for WfpiError {
 impl From<rppal::pwm::Error> for WfpiError {
     fn from(err: rppal::pwm::Error) -> WfpiError {
         WfpiError::PwmError { err }
+    }
+}
+
+impl From<std::io::Error> for WfpiError {
+    fn from(err: std::io::Error) -> WfpiError {
+        WfpiError::IoError { err }
+    }
+}
+
+impl From<failure::Error> for WfpiError {
+    fn from(err: failure::Error) -> WfpiError {
+        WfpiError::GenericError { err }
     }
 }
 

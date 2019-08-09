@@ -45,6 +45,7 @@ pub fn main() -> Result<()> {
     let eeg_run = running.clone();
     let eeg_join = std::thread::spawn(move || {
         let mut mindwave = eeg::Mindwave::init().expect("failed to initialize mindwave");
+        println!("Initialized mindwave");
         while eeg_run.load(Ordering::SeqCst) {
             if let Err(err) = mindwave.update() {
                 println!("failed to update mindwave: {}", err);
@@ -65,6 +66,7 @@ pub fn main() -> Result<()> {
     let myo_run = running.clone();
     let myo_join = std::thread::spawn(move || {
         let mut myo_reader = myo::MyoReader::init().expect("Myo reader failed to initialize");
+        println!("Initialized myo");
         while myo_run.load(Ordering::SeqCst) {
             if let Err(err) = myo_reader.update() {
                 println!("failed to update myo: {}", err);
@@ -96,22 +98,27 @@ pub fn main() -> Result<()> {
         res.unwrap()
     };
 
+    let mut last_data = [0; 5];
+
     while running.load(Ordering::SeqCst) {
         let data = rx.recv()?;
         match data {
             DeviceSignal::Eeg(attention, meditation, signal_quality) => {
                 output.update_trigger(attention).expect("failed to write to XAC");
-                println!("Received EEG data: {} | {} | {}", attention, meditation, signal_quality);
+                last_data[0] = attention as u16;
+                last_data[1] = meditation as u16;
+                last_data[2] = signal_quality as u16;
             }
             DeviceSignal::Myo1(val) => {
                 output.update_left_btn(val > 200);
-                // println!("Myo 1: {}", val);
+                last_data[3] = val;
             }
             DeviceSignal::Myo2(val) => {
                 output.update_right_btn(val > 200);
-                // println!("Myo 2: {}", val);
+                last_data[4] = val;
             }
         }
+        println!("{:?}", last_data);
     }
 
     // Join all the threads - waits for anything they need to clean up to finish before we do any cleanup from the main thread
