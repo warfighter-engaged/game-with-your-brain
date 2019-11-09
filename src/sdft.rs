@@ -2,7 +2,7 @@ use num::Complex;
 
 type NumType = f64;
 
-pub const DFT_LENGTH: usize = 256;
+pub const DFT_LENGTH: usize = 512;
 pub struct SlidingDFT {
     /// Are the frequency domain values valid? (i.e. have at least DFT_LENGTH data
     /// points been seen?)

@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 
 mod eeg;
+mod emg_process;
 mod error;
 mod myo;
 mod sdft;
@@ -15,9 +16,9 @@ use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Axis, Block, Borders, Chart, Dataset, Marker, Widget};
+use tui::widgets::{Axis, Block, Borders, Chart, Dataset, List, Marker, Text, Widget};
 use tui::Terminal;
 
 // The simple-signal crate is used to handle incoming signals
@@ -113,8 +114,16 @@ mod event {
 
 enum DeviceSignal {
     Eeg(u8, u8, u8),
-    Myo1((num::Complex<f64>, u16, Vec<num::Complex<f64>>)),
-    Myo2((num::Complex<f64>, u16, Vec<num::Complex<f64>>)),
+    Myo1(f64),
+    Myo2(f64),
+}
+
+fn fmin(v1: f64, v2: f64) -> f64 {
+    if v1 < v2 { v1 } else { v2 }
+}
+
+fn fmax(v1: f64, v2: f64) -> f64 {
+    if v1 > v2 { v1 } else { v2 } 
 }
 
 pub fn main() -> Result<()> {
@@ -181,11 +190,11 @@ pub fn main() -> Result<()> {
                     continue;
                 }
                 Ok(true) => {
-                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo1((myo_parser.get_value(myo::Side::Left).unwrap(), myo_parser.get_raw_value(myo::Side::Left), myo_parser.get_values(myo::Side::Left).to_owned()))) {
+                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo1(myo_parser.get_value(myo::Side::Left))) {
                         println!("failed to send data");
                         break;
                     }
-                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo2((myo_parser.get_value(myo::Side::Right).unwrap(), myo_parser.get_raw_value(myo::Side::Right), myo_parser.get_values(myo::Side::Right).to_owned()))) {
+                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo2(myo_parser.get_value(myo::Side::Right))) {
                         println!("failed to send data");
                         break;
                     }
@@ -217,18 +226,17 @@ pub fn main() -> Result<()> {
         let mut myo_left_data: Vec<(f64, f64)> = vec![];
         let mut myo_right_data: Vec<(f64, f64)> = vec![];
 
-        let mut myo_left_raw: Vec<(f64, f64)> = vec![];
-        let mut myo_right_raw: Vec<(f64, f64)> = vec![];
-
-        let mut myo_left_values: Vec<(f64, f64)> = vec![];
-        let mut myo_right_values: Vec<(f64, f64)> = vec![];
-
         let mut pressed = [false; 2];
 
         let mut current_time = 0f64;
 
+        let mut sending = (false, false, 0f64);
+
         while collector_running.load(Ordering::SeqCst) {
             let data = rx.recv().unwrap();
+            const MYO_THRESHOLD: f64 = 50f64;
+            const EEG_LOWER_BOUND: f64 = 20f64;
+            const EEG_UPPER_BOUND: f64 = 80f64;
             match data {
                 DeviceSignal::Eeg(attention, meditation, signal_quality) => {
                     last_data[0] = u16::from(attention);
@@ -240,46 +248,48 @@ pub fn main() -> Result<()> {
                     // Shift attention to only count a range from 20-80
                     // Values outside that range are compressed to 0 or 100
                     let attention = f64::from(attention);
-                    let attention = if attention < 20f64 {
-                        20f64
-                    } else if attention > 80f64 {
-                        80f64
+                    let attention = if attention < EEG_LOWER_BOUND {
+                        EEG_LOWER_BOUND
+                    } else if attention > EEG_UPPER_BOUND {
+                        EEG_UPPER_BOUND
                     } else {
                         attention
                     };
-                    let attention = (attention - 20f64) * (100f64 / 60f64);
+                    let attention = (attention - EEG_LOWER_BOUND) * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
+
+                    sending.2 = attention;
+
                     output.update_trigger(attention).expect("failed to write to XAC");
                 }
                 DeviceSignal::Myo1(val) => {
                     // println!("MYO (Left): {}", val);
                     if myo_left_data.len() > 512 {
                         myo_left_data.remove(0);
-                        myo_left_raw.remove(0);
                     }
-                    myo_left_data.push((current_time, val.0.re));
-                    myo_left_raw.push((current_time, val.1 as f64));
-                    myo_left_values = val.2.iter().enumerate().map(|(idx, val)| {
-                        (idx as f64, val.re)
-                    }).collect();
+                    myo_left_data.push((current_time, val));
+
+                    let b_val = val > MYO_THRESHOLD;
+                    sending.0 = b_val;
+                    output.update_left_btn(b_val);
                 }
                 DeviceSignal::Myo2(val) => {
                     if myo_right_data.len() > 512 {
                         myo_right_data.remove(0);
-                        myo_right_raw.remove(0);
                     }
-                    myo_right_data.push((current_time, val.0.re));
-                    myo_right_raw.push((current_time, val.1 as f64));
-                    myo_right_values = val.2.iter().enumerate().map(|(idx, val)| {
-                        (idx as f64, val.re)
-                    }).collect();
+                    myo_right_data.push((current_time, val));
+
+                    let b_val = val > MYO_THRESHOLD;
+                    sending.1 = b_val;
+                    output.update_right_btn(b_val);
                 }
             }
-            collector_tx.send((eeg_data.clone(), myo_left_data.clone(), myo_right_data.clone(), myo_left_raw.clone(), myo_right_raw.clone(), myo_left_values.clone(), myo_right_values.clone(), current_time)).expect("failed to send");
+            collector_tx.send((eeg_data.clone(), myo_left_data.clone(), myo_right_data.clone(), sending, current_time)).expect("failed to send");
             current_time += 0.5f64;
         }
     });
     
     let mut myo_left_val_avg: Vec<(f64, f64)> = vec![];
+    let mut myo_left_val_weighted_avg: Vec<(f64, f64)> = vec![];
     let mut myo_left_val_std_dev: Vec<(f64, f64)> = vec![];
     let mut current_time = 0f64;
 
@@ -289,20 +299,14 @@ pub fn main() -> Result<()> {
         let mut eeg_data: Vec<(f64, [u16;3])> = vec![];
         let mut myo_left_data: Vec<(f64, f64)> = vec![];
         let mut myo_right_data: Vec<(f64, f64)> = vec![];
-        let mut myo_left_raw: Vec<(f64, f64)> = vec![];
-        let mut myo_right_raw: Vec<(f64, f64)> = vec![];
-        let mut myo_left_vals: Vec<(f64, f64)> = vec![];
-        let mut myo_right_vals: Vec<(f64, f64)> = vec![];
         let mut had_some = false;
-        while let Some((eeg, left, right, left_raw, right_raw, left_vals, right_vals, _curr_time)) = rx_o.try_iter().next() {
+        let mut sending = (false, false, 0f64);
+        while let Some((eeg, left, right, send, _curr_time)) = rx_o.try_iter().next() {
             eeg_data = eeg;
             myo_left_data = left;
             myo_right_data = right;
-            myo_left_raw = left_raw;
-            myo_right_raw = right_raw;
-            myo_left_vals = left_vals;
-            myo_right_vals = right_vals;
             had_some = true;
+            sending = send;
         }
 
         if !had_some {
@@ -311,44 +315,22 @@ pub fn main() -> Result<()> {
 
         current_time += 1f64;
 
-        // spiders georg is an outlier adn should not have been counted
-        // aka remove the DC component
-        if myo_left_vals.len() > 1 {
-            myo_left_vals.remove(0);
-        }
+        let myo_dataset = myo_left_data.clone(); // TODO: Change me!
 
-        let myo_left_avg = (&myo_left_vals).iter().fold(0f64, |sum, val| {
-            sum + val.1
-        }) / myo_left_vals.len() as f64;
-        if myo_left_val_avg.len() > 128 {
-            myo_left_val_avg.remove(0);
-        }
-        myo_left_val_avg.push((current_time, myo_left_avg));
-
-        let myo_left_std_dev = (&myo_left_vals).iter().fold(0f64, |sum, val| {
-            sum + (val.1 - myo_left_avg).powf(2f64)
-        }).sqrt();
-        if myo_left_val_std_dev.len() > 128 {
-            myo_left_val_avg.remove(0);
-        }
-        myo_left_val_std_dev.push((current_time, myo_left_std_dev));
-
-        
-
-        let myo_min = (&myo_left_val_std_dev).iter().fold(None, |min, x| match min {
+        let myo_min = (&myo_dataset).iter().fold(None, |min, x| match min {
             None => Some(x.1),
             Some(y) => Some(if x.1 < y { x.1 } else { y })
         }).unwrap_or(0f64);
-        let myo_max = (&myo_left_val_std_dev).iter().fold(None, |max, x| match max {
+        let myo_max = (&myo_dataset).iter().fold(None, |max, x| match max {
             None => Some(x.1),
             Some(y) => Some(if x.1 > y { x.1 } else { y })
         }).unwrap_or(0f64);
 
-        let myo_min_x = (&myo_left_val_std_dev).iter().fold(None, |min, x| match min {
+        let myo_min_x = (&myo_dataset).iter().fold(None, |min, x| match min {
             None => Some(x.0),
             Some(y) => Some(if x.0 < y { x.0 } else { y })
         }).unwrap_or(0f64);
-        let myo_max_x = (&myo_left_val_std_dev).iter().fold(None, |max, x| match max {
+        let myo_max_x = (&myo_dataset).iter().fold(None, |max, x| match max {
             None => Some(x.0),
             Some(y) => Some(if x.0 > y { x.0 } else { y })
         }).unwrap_or(0f64);
@@ -357,14 +339,55 @@ pub fn main() -> Result<()> {
         let eeg_data_2: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[1] as f64)).collect();
         let eeg_data_3: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[2] as f64)).collect();
 
+        let eeg_min_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 < y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_max_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 > y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_min_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 < y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_max_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 > y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_min_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 < y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_max_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(if x.1 > y { x.1 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_min = fmin(eeg_min_1, fmin(eeg_min_2, eeg_min_3));
+        let eeg_max = fmax(eeg_max_1, fmax(eeg_max_2, eeg_max_3));
+
+        let eeg_min_x = (&eeg_data_1).iter().fold(None, |min, x| match min {
+            None => Some(x.0),
+            Some(y) => Some(if x.0 < y { x.0 } else { y })
+        }).unwrap_or(0f64);
+        let eeg_max_x = (&eeg_data_1).iter().fold(None, |max, x| match max {
+            None => Some(x.0),
+            Some(y) => Some(if x.0 > y { x.0 } else { y })
+        }).unwrap_or(0f64);
+
         terminal.draw(|mut f| {
             let size = f.size();
 
-            let constraints = vec![Constraint::Percentage(50), Constraint::Percentage(50)];
-            let chunks = Layout::default()
-                .constraints(constraints)
-                .direction(Direction::Vertical)
+            let constraints_1 = vec![Constraint::Percentage(80), Constraint::Percentage(20)];
+            let constraints_2 = vec![Constraint::Percentage(50), Constraint::Percentage(50)];
+            let main_chunks = Layout::default()
+                .constraints(constraints_1)
+                .direction(Direction::Horizontal)
                 .split(size);
+            let chunks = Layout::default()
+                .constraints(constraints_2)
+                .direction(Direction::Vertical)
+                .split(main_chunks[0]);
 
             // EEG Chart
 
@@ -380,16 +403,16 @@ pub fn main() -> Result<()> {
                     .title("Ticks")
                     .style(Style::default().fg(Color::Gray))
                     .labels_style(Style::default().modifier(Modifier::ITALIC))
-                    .bounds([myo_min_x, myo_max_x])
-                    .labels(&[&format!("{}", myo_min_x), &format!("{}", myo_max_x)])
+                    .bounds([eeg_min_x, eeg_max_x])
+                    .labels(&[&format!("{}", eeg_min_x), &format!("{}", eeg_max_x)])
                 )
                 .y_axis(
                     Axis::default()
                         .title("SDFT")
                         .style(Style::default().fg(Color::Gray))
                         .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds([myo_min, myo_max])
-                        .labels(&[&format!("{}", myo_min), &format!("{}", (myo_min + myo_max) / 2f64), &format!("{}", myo_max)])
+                        .bounds([eeg_min, eeg_max])
+                        .labels(&[&format!("{}", myo_min), &format!("{}", (eeg_min + eeg_max) / 2f64), &format!("{}", myo_max)])
                 )
                 .datasets(&[
                     Dataset::default()
@@ -439,7 +462,7 @@ pub fn main() -> Result<()> {
                         .name("left")
                         .marker(Marker::Dot)
                         .style(Style::default().fg(Color::Cyan))
-                        .data(&myo_left_val_std_dev),
+                        .data(&myo_dataset),
                         /*
                     Dataset::default()
                         .name("right")
@@ -449,6 +472,26 @@ pub fn main() -> Result<()> {
                         */
                 ])
                 .render(&mut f, chunks[1]);
+
+            let events = vec![
+                Text::styled(
+                    format!("Myo (L): {}", sending.0),
+                    Style::default().fg(Color::White),
+                ),
+                Text::styled(
+                    format!("Myo (R): {}", sending.1),
+                    Style::default().fg(Color::White),
+                ),
+                Text::styled(
+                    format!("EEG: {}", sending.2),
+                    Style::default().fg(Color::White),
+                ),
+            ];
+            List::new(events.into_iter())
+                .block(Block::default().borders(Borders::ALL).title("XAC Output"))
+                .render(&mut f, main_chunks[1]);
+
+
         }).unwrap();
 
         match events.next()? {

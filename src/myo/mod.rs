@@ -19,6 +19,7 @@ use crate::Result;
 
 use rppal::spi;
 use crate::sdft::SlidingDFT;
+use crate::emg_process::*;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
@@ -100,8 +101,11 @@ impl MyoReader {
 
 pub struct MyoParser {
     reader: MyoReader,
-    left_sdft: SlidingDFT,
-    right_sdft: SlidingDFT,
+    left_emg: EMG,
+    right_emg: EMG,
+
+    left_val: f64,
+    right_val: f64,
 }
 
 impl MyoParser {
@@ -109,8 +113,10 @@ impl MyoParser {
     pub fn new() -> Result<Self> {
         Ok(Self {
             reader: MyoReader::init()?,
-            left_sdft: SlidingDFT::new(),
-            right_sdft: SlidingDFT::new(),
+            left_emg: EMG::new(SPI_MAX_CLOCK_SPEED as usize, 0.2f64, 40, 150, EmgOptions::HighPassFilterOn, EmgOptions::ReferenceUnavailable),
+            right_emg: EMG::new(SPI_MAX_CLOCK_SPEED as usize, 0.2f64, 40, 150, EmgOptions::HighPassFilterOn, EmgOptions::ReferenceUnavailable),
+            left_val: 0f64,
+            right_val: 0f64,
         })
     }
 
@@ -120,29 +126,18 @@ impl MyoParser {
         let res = self.reader.has_new_data();
 
         if res {
-            self.left_sdft.update(self.reader.get_value(Side::Left) as f64);
-            self.right_sdft.update(self.reader.get_value(Side::Right) as f64);
+            self.left_val = self.left_emg.filter_emg(self.reader.get_value(Side::Left) as f64);
+            self.right_val = self.right_emg.filter_emg(self.reader.get_value(Side::Right) as f64);
         }
 
-        Ok(res && self.left_sdft.is_data_valid() && self.right_sdft.is_data_valid())
+        Ok(res)
     }
 
     /// Gets the SDFT result for the given side
-    pub fn get_value(&self, side: Side) -> Option<num::Complex<f64>> {
+    pub fn get_value(&self, side: Side) -> f64 {
         match side {
-            Side::Left => self.left_sdft.get_value(),
-            Side::Right => self.right_sdft.get_value(),
+            Side::Left => self.left_val,
+            Side::Right => self.right_val,
         }
-    }
-
-    pub fn get_values(&self, side: Side) -> &[num::Complex<f64>] {
-        match side {
-            Side::Left => &self.left_sdft.dft,
-            Side::Right => &self.right_sdft.dft,
-        }
-    }
-
-    pub fn get_raw_value(&self, side: Side) -> u16 {
-        self.reader.get_value(side)
     }
 }
