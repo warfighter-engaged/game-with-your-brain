@@ -18,6 +18,7 @@
 use crate::Result;
 
 use rppal::spi;
+use crate::sdft::SlidingDFT;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
@@ -94,5 +95,54 @@ impl MyoReader {
 
     pub fn get_value(&self, side: Side) -> u16 {
         self.values[side as usize]
+    }
+}
+
+pub struct MyoParser {
+    reader: MyoReader,
+    left_sdft: SlidingDFT,
+    right_sdft: SlidingDFT,
+}
+
+impl MyoParser {
+    /// Creates a new MYO parser
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            reader: MyoReader::init()?,
+            left_sdft: SlidingDFT::new(),
+            right_sdft: SlidingDFT::new(),
+        })
+    }
+
+    /// Updates the MYOs, returns true if there's new data, false otherwise
+    pub fn update(&mut self) -> Result<bool> {
+        self.reader.update()?;
+        let res = self.reader.has_new_data();
+
+        if res {
+            self.left_sdft.update(self.reader.get_value(Side::Left) as f64);
+            self.right_sdft.update(self.reader.get_value(Side::Right) as f64);
+        }
+
+        Ok(res && self.left_sdft.is_data_valid() && self.right_sdft.is_data_valid())
+    }
+
+    /// Gets the SDFT result for the given side
+    pub fn get_value(&self, side: Side) -> Option<num::Complex<f64>> {
+        match side {
+            Side::Left => self.left_sdft.get_value(),
+            Side::Right => self.right_sdft.get_value(),
+        }
+    }
+
+    pub fn get_values(&self, side: Side) -> &[num::Complex<f64>] {
+        match side {
+            Side::Left => &self.left_sdft.dft,
+            Side::Right => &self.right_sdft.dft,
+        }
+    }
+
+    pub fn get_raw_value(&self, side: Side) -> u16 {
+        self.reader.get_value(side)
     }
 }

@@ -8,7 +8,10 @@ edition = "2018"
 rppal = "0.11.3"
 simple-signal = "1.1.1"
 failure = "0.1.5"
-signalo = "0.5.0"
+num = "0.2.0"
+float_extras = "0.1.6"
+tui = "0.6.2"
+termion = "1.5.3"
 
 [profile.dev]
 panic = "abort"
