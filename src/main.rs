@@ -234,7 +234,7 @@ pub fn main() -> Result<()> {
 
         while collector_running.load(Ordering::SeqCst) {
             let data = rx.recv().unwrap();
-            const MYO_THRESHOLD: f64 = 50f64;
+            const MYO_THRESHOLD: f64 = 85f64;
             const EEG_LOWER_BOUND: f64 = 20f64;
             const EEG_UPPER_BOUND: f64 = 80f64;
             match data {
