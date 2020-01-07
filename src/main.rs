@@ -44,8 +44,8 @@ mod event {
     /// type is handled in its own thread and returned to a common `Receiver`
     pub struct Events {
         rx: mpsc::Receiver<Event<Key>>,
-        input_handle: thread::JoinHandle<()>,
-        tick_handle: thread::JoinHandle<()>,
+        _input_handle: thread::JoinHandle<()>,
+        _tick_handle: thread::JoinHandle<()>,
     }
 
     #[derive(Debug, Clone, Copy)]
@@ -75,16 +75,13 @@ mod event {
                 thread::spawn(move || {
                     let stdin = io::stdin();
                     for evt in stdin.keys() {
-                        match evt {
-                            Ok(key) => {
-                                if let Err(_) = tx.send(Event::Input(key)) {
-                                    return;
-                                }
-                                if key == config.exit_key {
-                                    return;
-                                }
+                        if let Ok(key) = evt {
+                            if tx.send(Event::Input(key)).is_err() {
+                                return;
                             }
-                            Err(_) => {}
+                            if key == config.exit_key {
+                                return;
+                            }
                         }
                     }
                 })
@@ -101,8 +98,8 @@ mod event {
             };
             Events {
                 rx,
-                input_handle,
-                tick_handle,
+                _input_handle: input_handle,
+                _tick_handle: tick_handle,
             }
         }
 
@@ -226,8 +223,6 @@ pub fn main() -> Result<()> {
         let mut myo_left_data: Vec<(f64, f64)> = vec![];
         let mut myo_right_data: Vec<(f64, f64)> = vec![];
 
-        let mut pressed = [false; 2];
-
         let mut current_time = 0f64;
 
         let mut sending = (false, false, 0f64);
@@ -287,15 +282,8 @@ pub fn main() -> Result<()> {
             current_time += 0.5f64;
         }
     });
-    
-    let mut myo_left_val_avg: Vec<(f64, f64)> = vec![];
-    let mut myo_left_val_weighted_avg: Vec<(f64, f64)> = vec![];
-    let mut myo_left_val_std_dev: Vec<(f64, f64)> = vec![];
-    let mut current_time = 0f64;
 
     while running.load(Ordering::SeqCst) {
-        // println!("{:?}", last_data);
-
         let mut eeg_data: Vec<(f64, [u16;3])> = vec![];
         let mut myo_left_data: Vec<(f64, f64)> = vec![];
         let mut myo_right_data: Vec<(f64, f64)> = vec![];
@@ -313,26 +301,35 @@ pub fn main() -> Result<()> {
             continue;
         }
 
-        current_time += 1f64;
+        let myo_left_dataset = myo_left_data.clone(); // TODO: Change me!
+        let myo_right_dataset = myo_right_data.clone();
 
-        let myo_dataset = myo_left_data.clone(); // TODO: Change me!
-
-        let myo_min = (&myo_dataset).iter().fold(None, |min, x| match min {
+        let myo_left_min = (&myo_left_dataset).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 < y { x.1 } else { y })
+            Some(y) => Some(fmin(x.1, y))
         }).unwrap_or(0f64);
-        let myo_max = (&myo_dataset).iter().fold(None, |max, x| match max {
+        let myo_left_max = (&myo_left_dataset).iter().fold(None, |max, x| match max {
             None => Some(x.1),
-            Some(y) => Some(if x.1 > y { x.1 } else { y })
+            Some(y) => Some(fmax(x.1, y))
         }).unwrap_or(0f64);
+        let myo_right_min = (&myo_right_dataset).iter().fold(None, |min, x| match min {
+            None => Some(x.1),
+            Some(y) => Some(fmin(x.1, y))
+        }).unwrap_or(0f64);
+        let myo_right_max = (&myo_right_dataset).iter().fold(None, |max, x| match max {
+            None => Some(x.1),
+            Some(y) => Some(fmax(x.1, y))
+        }).unwrap_or(0f64);
+        let myo_min = fmin(myo_left_min, myo_right_min);
+        let myo_max = fmax(myo_left_max, myo_right_max);
 
-        let myo_min_x = (&myo_dataset).iter().fold(None, |min, x| match min {
+        let myo_min_x = (&myo_left_dataset).iter().fold(None, |min, x| match min {
             None => Some(x.0),
-            Some(y) => Some(if x.0 < y { x.0 } else { y })
+            Some(y) => Some(fmin(x.0, y))
         }).unwrap_or(0f64);
-        let myo_max_x = (&myo_dataset).iter().fold(None, |max, x| match max {
+        let myo_max_x = (&myo_left_dataset).iter().fold(None, |max, x| match max {
             None => Some(x.0),
-            Some(y) => Some(if x.0 > y { x.0 } else { y })
+            Some(y) => Some(fmax(x.0, y))
         }).unwrap_or(0f64);
 
         let eeg_data_1: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[0] as f64)).collect();
@@ -341,38 +338,38 @@ pub fn main() -> Result<()> {
 
         let eeg_min_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 < y { x.1 } else { y })
+            Some(y) => Some(fmin(x.1, y))
         }).unwrap_or(0f64);
         let eeg_max_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 > y { x.1 } else { y })
+            Some(y) => Some(fmax(x.1, y))
         }).unwrap_or(0f64);
         let eeg_min_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 < y { x.1 } else { y })
+            Some(y) => Some(fmin(x.1, y))
         }).unwrap_or(0f64);
         let eeg_max_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 > y { x.1 } else { y })
+            Some(y) => Some(fmax(x.1, y))
         }).unwrap_or(0f64);
         let eeg_min_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 < y { x.1 } else { y })
+            Some(y) => Some(fmin(x.1, y))
         }).unwrap_or(0f64);
         let eeg_max_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
             None => Some(x.1),
-            Some(y) => Some(if x.1 > y { x.1 } else { y })
+            Some(y) => Some(fmax(x.1, y))
         }).unwrap_or(0f64);
         let eeg_min = fmin(eeg_min_1, fmin(eeg_min_2, eeg_min_3));
         let eeg_max = fmax(eeg_max_1, fmax(eeg_max_2, eeg_max_3));
 
         let eeg_min_x = (&eeg_data_1).iter().fold(None, |min, x| match min {
             None => Some(x.0),
-            Some(y) => Some(if x.0 < y { x.0 } else { y })
+            Some(y) => Some(fmin(x.0, y))
         }).unwrap_or(0f64);
         let eeg_max_x = (&eeg_data_1).iter().fold(None, |max, x| match max {
             None => Some(x.0),
-            Some(y) => Some(if x.0 > y { x.0 } else { y })
+            Some(y) => Some(fmax(x.0, y))
         }).unwrap_or(0f64);
 
         terminal.draw(|mut f| {
@@ -412,7 +409,7 @@ pub fn main() -> Result<()> {
                         .style(Style::default().fg(Color::Gray))
                         .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([eeg_min, eeg_max])
-                        .labels(&[&format!("{}", myo_min), &format!("{}", (eeg_min + eeg_max) / 2f64), &format!("{}", myo_max)])
+                        .labels(&[&format!("{}", eeg_min), &format!("{}", (eeg_min + eeg_max) / 2f64), &format!("{}", eeg_max)])
                 )
                 .datasets(&[
                     Dataset::default()
@@ -462,14 +459,12 @@ pub fn main() -> Result<()> {
                         .name("left")
                         .marker(Marker::Dot)
                         .style(Style::default().fg(Color::Cyan))
-                        .data(&myo_dataset),
-                        /*
+                        .data(&myo_left_dataset),
                     Dataset::default()
                         .name("right")
                         .marker(Marker::Braille)
                         .style(Style::default().fg(Color::Yellow))
-                        .data(&myo_right_vals),
-                        */
+                        .data(&myo_right_dataset),
                 ])
                 .render(&mut f, chunks[1]);
 
@@ -494,14 +489,11 @@ pub fn main() -> Result<()> {
 
         }).unwrap();
 
-        match events.next()? {
-            event::Event::Input(input) => {
-                if input == termion::event::Key::Char('q') {
-                    let running = running.clone();
-                    running.store(false, Ordering::SeqCst);
-                }
-            },
-            _ => ()
+        if let event::Event::Input(input) = events.next()? {
+            if input == termion::event::Key::Char('q') {
+                let running = running.clone();
+                running.store(false, Ordering::SeqCst);
+            }
         }
     }
 
