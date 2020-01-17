@@ -279,6 +279,37 @@ pub fn main() -> Result<()> {
             }
             collector_tx.send((eeg_data.clone(), myo_left_data.clone(), myo_right_data.clone(), sending, current_time)).expect("failed to send");
             current_time += 0.5f64;
+
+            if let Ok(event::Event::Input(input)) = events.next() {
+                match input {
+                    termion::event::Key::Char('q') => {
+                        collector_running.store(false, Ordering::SeqCst);
+                    }
+                    termion::event::Key::Char('z') => {
+                        output.update_left_btn(true);
+                    }
+                    termion::event::Key::Char('x') => {
+                        output.update_left_btn(false);
+                    }
+                    termion::event::Key::Char('c') => {
+                        output.update_right_btn(true);
+                    }
+                    termion::event::Key::Char('v') => {
+                        output.update_right_btn(false);
+                    }
+                    termion::event::Key::Char('b') => {
+                        if let Err(e) = output.update_trigger(100f64) {
+                            println!("Error updating trigger: {:?}", e);
+                        }
+                    }
+                    termion::event::Key::Char('n') => {
+                        if let Err(e) = output.update_trigger(0f64) {
+                            println!("Error updating trigger: {:?}", e)
+                        }
+                    }
+                    _ => ()
+                };
+            }
         }
     });
 
@@ -467,7 +498,7 @@ pub fn main() -> Result<()> {
                 ])
                 .render(&mut f, chunks[1]);
 
-            let events = vec![
+            let events_list = vec![
                 Text::styled(
                     format!("Myo (L): {}", sending.0),
                     Style::default().fg(Color::White),
@@ -481,19 +512,11 @@ pub fn main() -> Result<()> {
                     Style::default().fg(Color::White),
                 ),
             ];
-            List::new(events.into_iter())
+            List::new(events_list.into_iter())
                 .block(Block::default().borders(Borders::ALL).title("XAC Output"))
                 .render(&mut f, main_chunks[1]);
 
-
         }).unwrap();
-
-        if let event::Event::Input(input) = events.next()? {
-            if input == termion::event::Key::Char('q') {
-                let running = running.clone();
-                running.store(false, Ordering::SeqCst);
-            }
-        }
     }
 
     // Join all the threads - waits for anything they need to clean up to finish before we do any cleanup from the main thread

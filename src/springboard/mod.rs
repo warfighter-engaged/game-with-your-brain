@@ -51,7 +51,7 @@ impl Springboard {
         self.right_btn.write(if pressed { gpio::Level::High } else { gpio::Level::Low } );
     }
 
-    /// Update the trigger pull to a value
+    /// Update the trigger pull to a value in the range [0, 100]
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
         self.trigger.set_duty_cycle(value / 100f64)?;
         self.trigger_ref.set_duty_cycle(0.0f64)?;
