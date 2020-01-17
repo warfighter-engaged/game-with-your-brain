@@ -251,9 +251,8 @@ pub fn main() -> Result<()> {
                     };
                     let attention = (attention - EEG_LOWER_BOUND) * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
 
-                    sending.2 = attention;
-
-                    output.update_trigger(attention).expect("failed to write to XAC");
+                    // sending.2 = attention;
+                    // output.update_trigger(attention).expect("failed to write to XAC");
                 }
                 DeviceSignal::Myo1(val) => {
                     // println!("MYO (Left): {}", val);
@@ -263,8 +262,8 @@ pub fn main() -> Result<()> {
                     myo_left_data.push((current_time, val));
 
                     let b_val = val > MYO_THRESHOLD;
-                    sending.0 = b_val;
-                    output.update_left_btn(b_val);
+                    // sending.0 = b_val;
+                    // output.update_left_btn(b_val);
                 }
                 DeviceSignal::Myo2(val) => {
                     if myo_right_data.len() > 512 {
@@ -273,8 +272,8 @@ pub fn main() -> Result<()> {
                     myo_right_data.push((current_time, val));
 
                     let b_val = val > MYO_THRESHOLD;
-                    sending.1 = b_val;
-                    output.update_right_btn(b_val);
+                    // sending.1 = b_val;
+                    // output.update_right_btn(b_val);
                 }
             }
             collector_tx.send((eeg_data.clone(), myo_left_data.clone(), myo_right_data.clone(), sending, current_time)).expect("failed to send");
@@ -287,25 +286,31 @@ pub fn main() -> Result<()> {
                     }
                     termion::event::Key::Char('z') => {
                         output.update_left_btn(true);
+                        sending.0 = true;
                     }
                     termion::event::Key::Char('x') => {
                         output.update_left_btn(false);
+                        sending.0 = false;
                     }
                     termion::event::Key::Char('c') => {
                         output.update_right_btn(true);
+                        sending.1 = true;
                     }
                     termion::event::Key::Char('v') => {
                         output.update_right_btn(false);
+                        sending.1 = false;
                     }
                     termion::event::Key::Char('b') => {
                         if let Err(e) = output.update_trigger(100f64) {
                             println!("Error updating trigger: {:?}", e);
                         }
+                        sending.2 = 100f64;
                     }
                     termion::event::Key::Char('n') => {
                         if let Err(e) = output.update_trigger(0f64) {
                             println!("Error updating trigger: {:?}", e)
                         }
+                        sending.2 = 0f64;
                     }
                     _ => ()
                 };
