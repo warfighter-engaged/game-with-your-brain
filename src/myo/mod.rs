@@ -18,7 +18,6 @@
 use crate::Result;
 
 use rppal::spi;
-use crate::sdft::SlidingDFT;
 use crate::emg_process::*;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;

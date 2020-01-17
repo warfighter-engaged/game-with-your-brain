@@ -4,7 +4,6 @@ mod eeg;
 mod emg_process;
 mod error;
 mod myo;
-mod sdft;
 mod springboard;
 
 pub use error::*;
@@ -405,7 +404,7 @@ pub fn main() -> Result<()> {
                 )
                 .y_axis(
                     Axis::default()
-                        .title("SDFT")
+                        .title("EEG")
                         .style(Style::default().fg(Color::Gray))
                         .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([eeg_min, eeg_max])
@@ -448,7 +447,7 @@ pub fn main() -> Result<()> {
                 )
                 .y_axis(
                     Axis::default()
-                        .title("SDFT")
+                        .title("MYO")
                         .style(Style::default().fg(Color::Gray))
                         .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([myo_min, myo_max])
