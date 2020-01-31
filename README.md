@@ -27,7 +27,7 @@ Once these are set, you can run `cargo build` and build a target for the Raspber
 
 ### Raspberry Pi Setup
 
-The inputs use both serial/UART and SPI communications, which have to be enabled in the Pi's settings before they can be used.
+The inputs uses serial/UART, I2C, and SPI communications, which have to be enabled in the Pi's settings before they can be used.
 
 #### Serial
 
@@ -56,6 +56,12 @@ On Raspberry Pi models with a Bluetooth module, an extra step is required to eit
 To move the Bluetooth module to `/dev/ttyS0`, instead of disabling it with the above-mentioned steps, add `dtoverlay=pi3-miniuart-bt` and `core_freq=250` to `/boot/config.txt`.
 
 Remember to reboot the Raspberry Pi after making any changes.
+
+#### I2C
+
+The Raspberry Pi's BCM283x SoC supports three hardware I2C buses, however only the I2C bus on physical pins 3 and 5 should be used to communicate with slave devices. The other two buses are used internally as an HDMI interface, and for HAT identification.
+
+The I2C bus connected to physical pins 3 (SDA) and 5 (SCL) is disabled by default. You can enable it through sudo raspi-config, or by manually adding dtparam=i2c_arm=on to /boot/config.txt. Remember to reboot the Raspberry Pi afterwards.
 
 #### SPI
 

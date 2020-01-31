@@ -1,17 +1,17 @@
 //! This module handles connecting to and reading from a Neurosky EEG headset
 //! using a UART connection.
-//! 
+//!
 //! Code adapted from <https://github.com/redpaperheart/ArduinoMindwave>
-//! 
+//!
 //! When the Mindwave struct goes out of scope, all relevant pins are reset to their original state.
 //! This doesn't occur if an interrupt happens (ie Ctrl-C) unless a crate like `simple-signal` is used
 //! to intercept these signals.
 
 use crate::Result;
 
-use std::time::Instant;
-use std::time::Duration;
 use rppal::uart::{Parity, Uart};
+use std::time::Duration;
+use std::time::Instant;
 
 const BAUDRATE: u32 = 57_600;
 
@@ -69,7 +69,8 @@ impl Mindwave {
         }
 
         let payload_length = self.read_one_byte()?;
-        if payload_length > 169 { // payload length cannot be greater than 169
+        if payload_length > 169 {
+            // payload length cannot be greater than 169
             println!("!!! Payload length exceeded 169 bytes !!!");
             return Ok(()); // TODO: Return err
         }
@@ -129,7 +130,10 @@ impl Mindwave {
                 print!("PoorQuality: {}", self.poor_quality);
                 print!(" Attention: {}", self.attention);
                 print!(" Meditation: {}", self.meditation);
-                println!(" Time since last packet: {}", dur.as_millis() as f32 / 1000f32);
+                println!(
+                    " Time since last packet: {}",
+                    dur.as_millis() as f32 / 1000f32
+                );
             }
 
             self.last_received_packet = now;
@@ -150,7 +154,7 @@ impl Mindwave {
     pub fn set_debug(&mut self, d: bool) {
         self.debug = d;
     }
-    
+
     /// Sets the duration that it will take before deciding that there is not data coming in, and setting the quality to 0. Default is 5000 (5 seconds).
     #[inline]
     pub fn set_timeout(&mut self, timeout: Duration) {

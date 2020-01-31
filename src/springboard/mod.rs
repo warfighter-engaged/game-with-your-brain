@@ -1,29 +1,27 @@
 //! This module handles connecting to and sending data to an XBOX Adaptive Controller.
 //! To do this, we leverage the Raspberry Pi's PWM pins.
-//! 
+//!
 //! Since the Pi's analog audio output uses both PWM channels, using them and playing
 //! audio simultaneously may cause issues.
 
+mod adafruit3502;
+
 use crate::Result;
 
-use rppal::pwm;
 use rppal::gpio;
+use rppal::i2c;
 
 const GPIO_LEFT_BTN: u8 = 23; // BCM GPIO 23 is tied to phyiscal pin 16
 const GPIO_RIGHT_BTN: u8 = 22; // BCM GPIO 22 is tied to physical pin 15
 
-const PWM_TRIGGER_CHANNEL: pwm::Channel = pwm::Channel::Pwm0; // channel 0 is tied to BCM GPIO 12, physical pin 32
-const PWM_REFERENCE_CHANNEL: pwm::Channel = pwm::Channel::Pwm1; // channel 1 is tied to BCM GPIO 13, physical pin 33
-
-// const PWM_FREQUENCY: f64 = 490.0; // 490 Hz matches the frequency of the Arduino Mega analog pins used
-const PWM_FREQUENCY: f64 = 1000.0;
+const I2C_TRIGGER_BUS: u8 = 1; // For the early model B Rev 1, bus 0 is selected. For every other model, bus 1 is used.
+                               // This is tied to physical pin 3 and 5 (SDA and SCL)
 
 pub struct Springboard {
     left_btn: gpio::OutputPin,
     right_btn: gpio::OutputPin,
 
-    trigger: pwm::Pwm,
-    trigger_ref: pwm::Pwm,
+    trigger: adafruit3502::AdafruitDS3502,
 }
 
 impl Springboard {
@@ -32,29 +30,37 @@ impl Springboard {
         let left_btn = gpio_.get(GPIO_LEFT_BTN)?.into_output();
         let right_btn = gpio_.get(GPIO_RIGHT_BTN)?.into_output();
 
-        let trigger = pwm::Pwm::with_frequency(PWM_TRIGGER_CHANNEL, PWM_FREQUENCY, 0.0, pwm::Polarity::Normal, true)?;
-        let trigger_ref = pwm::Pwm::with_frequency(PWM_REFERENCE_CHANNEL, PWM_FREQUENCY, 0.0, pwm::Polarity::Normal, true)?;
+        let trigger_bus = i2c::I2c::with_bus(I2C_TRIGGER_BUS)?;
+        let mut trigger = adafruit3502::AdafruitDS3502::new(trigger_bus);
+        trigger.begin(adafruit3502::DS3502_I2CADDR_DEFAULT)?;
 
         Ok(Self {
             left_btn,
             right_btn,
             trigger,
-            trigger_ref,
         })
     }
 
     pub fn update_left_btn(&mut self, pressed: bool) {
-        self.left_btn.write(if pressed { gpio::Level::High } else { gpio::Level::Low } );
+        self.left_btn.write(if pressed {
+            gpio::Level::High
+        } else {
+            gpio::Level::Low
+        });
     }
 
     pub fn update_right_btn(&mut self, pressed: bool) {
-        self.right_btn.write(if pressed { gpio::Level::High } else { gpio::Level::Low } );
+        self.right_btn.write(if pressed {
+            gpio::Level::High
+        } else {
+            gpio::Level::Low
+        });
     }
 
     /// Update the trigger pull to a value in the range [0, 100]
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
-        self.trigger.set_duty_cycle(value / 100f64)?;
-        self.trigger_ref.set_duty_cycle(0.0f64)?;
+        // The wiper expects a value in the range [0, 127]
+        self.trigger.set_wiper((value * 127f64 / 100f64) as u8)?;
         Ok(())
     }
 }

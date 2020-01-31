@@ -3,37 +3,21 @@ use failure::Fail;
 #[derive(Debug, Fail)]
 pub enum WfpiError {
     #[fail(display = "error in eeg: {}", err)]
-    EegError {
-        err: rppal::uart::Error,
-    },
+    EegError { err: rppal::uart::Error },
     #[fail(display = "raspberry pi system error: {}", err)]
-    SystemError {
-        err: rppal::system::Error,
-    },
+    SystemError { err: rppal::system::Error },
     #[fail(display = "gpio error: {}", err)]
-    GpioError {
-        err: rppal::gpio::Error,
-    },
+    GpioError { err: rppal::gpio::Error },
     #[fail(display = "threading error: {}", err)]
-    ThreadingError {
-        err: std::sync::mpsc::RecvError,
-    },
+    ThreadingError { err: std::sync::mpsc::RecvError },
     #[fail(display = "spi error: {}", err)]
-    SpiError {
-        err: rppal::spi::Error,
-    },
-    #[fail(display = "pwm error: {}", err)]
-    PwmError {
-        err: rppal::pwm::Error,
-    },
+    SpiError { err: rppal::spi::Error },
+    #[fail(display = "i2c error: {}", err)]
+    PwmError { err: rppal::i2c::Error },
     #[fail(display = "i/o error: {}", err)]
-    IoError {
-        err: std::io::Error,
-    },
+    IoError { err: std::io::Error },
     #[fail(display = "generic error: {}", err)]
-    GenericError {
-        err: failure::Error,
-    },
+    GenericError { err: failure::Error },
 }
 
 impl From<rppal::uart::Error> for WfpiError {
@@ -66,8 +50,8 @@ impl From<rppal::spi::Error> for WfpiError {
     }
 }
 
-impl From<rppal::pwm::Error> for WfpiError {
-    fn from(err: rppal::pwm::Error) -> WfpiError {
+impl From<rppal::i2c::Error> for WfpiError {
+    fn from(err: rppal::i2c::Error) -> WfpiError {
         WfpiError::PwmError { err }
     }
 }

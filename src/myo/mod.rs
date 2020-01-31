@@ -1,24 +1,24 @@
 //! This module handles connecting to and reading from a MYO electric sensor.
 //! It assumes the use of an MCP3008 analog-to-digital converter connected to
 //! a raspberry pi via SPI.
-//! 
+//!
 //! All 40-pin raspberry pi models provide two SPI buses: SPI0 and SPI1. SPI1 has
 //! a few limitations, so we'll use SPI0. However, this bus must be enabled by running
 //! `sudo raspi-config`.
-//! 
+//!
 //! The associated pins are:
 //! * MISO: BCM GPIO 9 (physical pin 21)
 //! * MOSI: BCM GPIO 10 (physical pin 19)
 //! * SCLK: BCM GPIO 11 (physical pin 23)
 //! * SS: s0 BCM GPIO 8 (physical pin 24), Ss1 BCM GPIO 7 (physical pin 26)
-//! 
+//!
 //! Here we assume that the left MYO sensor is attached to channel 0, and the right sensor is
 //! attached to channel 1.
 
 use crate::Result;
 
-use rppal::spi;
 use crate::emg_process::*;
+use rppal::spi;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
@@ -112,8 +112,22 @@ impl MyoParser {
     pub fn new() -> Result<Self> {
         Ok(Self {
             reader: MyoReader::init()?,
-            left_emg: EMG::new(SPI_MAX_CLOCK_SPEED as usize, 0.2f64, 40, 150, EmgOptions::HighPassFilterOn, EmgOptions::ReferenceUnavailable),
-            right_emg: EMG::new(SPI_MAX_CLOCK_SPEED as usize, 0.2f64, 40, 150, EmgOptions::HighPassFilterOn, EmgOptions::ReferenceUnavailable),
+            left_emg: EMG::new(
+                SPI_MAX_CLOCK_SPEED as usize,
+                0.2f64,
+                40,
+                150,
+                EmgOptions::HighPassFilterOn,
+                EmgOptions::ReferenceUnavailable,
+            ),
+            right_emg: EMG::new(
+                SPI_MAX_CLOCK_SPEED as usize,
+                0.2f64,
+                40,
+                150,
+                EmgOptions::HighPassFilterOn,
+                EmgOptions::ReferenceUnavailable,
+            ),
             left_val: 0f64,
             right_val: 0f64,
         })
@@ -125,8 +139,12 @@ impl MyoParser {
         let res = self.reader.has_new_data();
 
         if res {
-            self.left_val = self.left_emg.filter_emg(self.reader.get_value(Side::Left) as f64);
-            self.right_val = self.right_emg.filter_emg(self.reader.get_value(Side::Right) as f64);
+            self.left_val = self
+                .left_emg
+                .filter_emg(self.reader.get_value(Side::Left) as f64);
+            self.right_val = self
+                .right_emg
+                .filter_emg(self.reader.get_value(Side::Right) as f64);
         }
 
         Ok(res)

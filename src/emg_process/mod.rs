@@ -24,7 +24,14 @@ pub struct EMG {
 }
 
 impl EMG {
-    pub fn new(sample_frequency: usize, range: f64, min_emg_frequency: usize, max_emg_frequency: usize, remove_low_frequency: EmgOptions, reference_available: EmgOptions) -> Self {
+    pub fn new(
+        sample_frequency: usize,
+        range: f64,
+        min_emg_frequency: usize,
+        max_emg_frequency: usize,
+        remove_low_frequency: EmgOptions,
+        reference_available: EmgOptions,
+    ) -> Self {
         let data = MovingAverage::new((sample_frequency as f64 * range) as usize);
         let for_hpf = if remove_low_frequency == EmgOptions::HighPassFilterOn {
             Some(MovingAverage::new(sample_frequency * 2 / min_emg_frequency))
@@ -49,7 +56,7 @@ impl EMG {
 
             reference_available,
             lpf_data,
-            lpf_reference
+            lpf_reference,
         }
     }
 

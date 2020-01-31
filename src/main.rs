@@ -115,11 +115,19 @@ enum DeviceSignal {
 }
 
 fn fmin(v1: f64, v2: f64) -> f64 {
-    if v1 < v2 { v1 } else { v2 }
+    if v1 < v2 {
+        v1
+    } else {
+        v2
+    }
 }
 
 fn fmax(v1: f64, v2: f64) -> f64 {
-    if v1 > v2 { v1 } else { v2 } 
+    if v1 > v2 {
+        v1
+    } else {
+        v2
+    }
 }
 
 pub fn main() -> Result<()> {
@@ -164,7 +172,11 @@ pub fn main() -> Result<()> {
                 continue;
             }
             if mindwave.has_new_data() {
-                if let Err(_err) = eeg_tx.send(DeviceSignal::Eeg(mindwave.get_attention(), mindwave.get_meditation(), mindwave.get_quality())) {
+                if let Err(_err) = eeg_tx.send(DeviceSignal::Eeg(
+                    mindwave.get_attention(),
+                    mindwave.get_meditation(),
+                    mindwave.get_quality(),
+                )) {
                     println!("failed to send data"); // This happens if the receiver has already hung up. Not really an error, but we don't want to keep shouting at a hung-up receiver, so we just break the loop.
                     break;
                 }
@@ -186,16 +198,20 @@ pub fn main() -> Result<()> {
                     continue;
                 }
                 Ok(true) => {
-                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo1(myo_parser.get_value(myo::Side::Left))) {
+                    if let Err(_err) =
+                        myo_tx.send(DeviceSignal::Myo1(myo_parser.get_value(myo::Side::Left)))
+                    {
                         println!("failed to send data");
                         break;
                     }
-                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo2(myo_parser.get_value(myo::Side::Right))) {
+                    if let Err(_err) =
+                        myo_tx.send(DeviceSignal::Myo2(myo_parser.get_value(myo::Side::Right)))
+                    {
                         println!("failed to send data");
                         break;
                     }
                 }
-                Ok(false) => () // no new data
+                Ok(false) => (), // no new data
             }
         }
     });
@@ -238,7 +254,7 @@ pub fn main() -> Result<()> {
                     last_data[2] = u16::from(signal_quality);
 
                     eeg_data.push((current_time, last_data));
-    
+
                     // Shift attention to only count a range from 20-80
                     // Values outside that range are compressed to 0 or 100
                     let attention = f64::from(attention);
@@ -249,7 +265,8 @@ pub fn main() -> Result<()> {
                     } else {
                         attention
                     };
-                    let attention = (attention - EEG_LOWER_BOUND) * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
+                    let attention = (attention - EEG_LOWER_BOUND)
+                        * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
 
                     // sending.2 = attention;
                     // output.update_trigger(attention).expect("failed to write to XAC");
@@ -276,7 +293,15 @@ pub fn main() -> Result<()> {
                     // output.update_right_btn(b_val);
                 }
             }
-            collector_tx.send((eeg_data.clone(), myo_left_data.clone(), myo_right_data.clone(), sending, current_time)).expect("failed to send");
+            collector_tx
+                .send((
+                    eeg_data.clone(),
+                    myo_left_data.clone(),
+                    myo_right_data.clone(),
+                    sending,
+                    current_time,
+                ))
+                .expect("failed to send");
             current_time += 0.5f64;
 
             if let Ok(event::Event::Input(input)) = events.next() {
@@ -312,14 +337,14 @@ pub fn main() -> Result<()> {
                         }
                         sending.2 = 0f64;
                     }
-                    _ => ()
+                    _ => (),
                 };
             }
         }
     });
 
     while running.load(Ordering::SeqCst) {
-        let mut eeg_data: Vec<(f64, [u16;3])> = vec![];
+        let mut eeg_data: Vec<(f64, [u16; 3])> = vec![];
         let mut myo_left_data: Vec<(f64, f64)> = vec![];
         let mut myo_right_data: Vec<(f64, f64)> = vec![];
         let mut had_some = false;
@@ -339,195 +364,257 @@ pub fn main() -> Result<()> {
         let myo_left_dataset = myo_left_data.clone(); // TODO: Change me!
         let myo_right_dataset = myo_right_data.clone();
 
-        let myo_left_min = (&myo_left_dataset).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmin(x.1, y))
-        }).unwrap_or(0f64);
-        let myo_left_max = (&myo_left_dataset).iter().fold(None, |max, x| match max {
-            None => Some(x.1),
-            Some(y) => Some(fmax(x.1, y))
-        }).unwrap_or(0f64);
-        let myo_right_min = (&myo_right_dataset).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmin(x.1, y))
-        }).unwrap_or(0f64);
-        let myo_right_max = (&myo_right_dataset).iter().fold(None, |max, x| match max {
-            None => Some(x.1),
-            Some(y) => Some(fmax(x.1, y))
-        }).unwrap_or(0f64);
+        let myo_left_min = (&myo_left_dataset)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmin(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let myo_left_max = (&myo_left_dataset)
+            .iter()
+            .fold(None, |max, x| match max {
+                None => Some(x.1),
+                Some(y) => Some(fmax(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let myo_right_min = (&myo_right_dataset)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmin(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let myo_right_max = (&myo_right_dataset)
+            .iter()
+            .fold(None, |max, x| match max {
+                None => Some(x.1),
+                Some(y) => Some(fmax(x.1, y)),
+            })
+            .unwrap_or(0f64);
         let myo_min = fmin(myo_left_min, myo_right_min);
         let myo_max = fmax(myo_left_max, myo_right_max);
 
-        let myo_min_x = (&myo_left_dataset).iter().fold(None, |min, x| match min {
-            None => Some(x.0),
-            Some(y) => Some(fmin(x.0, y))
-        }).unwrap_or(0f64);
-        let myo_max_x = (&myo_left_dataset).iter().fold(None, |max, x| match max {
-            None => Some(x.0),
-            Some(y) => Some(fmax(x.0, y))
-        }).unwrap_or(0f64);
+        let myo_min_x = (&myo_left_dataset)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.0),
+                Some(y) => Some(fmin(x.0, y)),
+            })
+            .unwrap_or(0f64);
+        let myo_max_x = (&myo_left_dataset)
+            .iter()
+            .fold(None, |max, x| match max {
+                None => Some(x.0),
+                Some(y) => Some(fmax(x.0, y)),
+            })
+            .unwrap_or(0f64);
 
-        let eeg_data_1: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[0] as f64)).collect();
-        let eeg_data_2: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[1] as f64)).collect();
-        let eeg_data_3: Vec<(f64, f64)> = eeg_data.iter().map(|(ct, datas)| (*ct, datas[2] as f64)).collect();
+        let eeg_data_1: Vec<(f64, f64)> = eeg_data
+            .iter()
+            .map(|(ct, datas)| (*ct, datas[0] as f64))
+            .collect();
+        let eeg_data_2: Vec<(f64, f64)> = eeg_data
+            .iter()
+            .map(|(ct, datas)| (*ct, datas[1] as f64))
+            .collect();
+        let eeg_data_3: Vec<(f64, f64)> = eeg_data
+            .iter()
+            .map(|(ct, datas)| (*ct, datas[2] as f64))
+            .collect();
 
-        let eeg_min_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmin(x.1, y))
-        }).unwrap_or(0f64);
-        let eeg_max_1 = (&eeg_data_1).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmax(x.1, y))
-        }).unwrap_or(0f64);
-        let eeg_min_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmin(x.1, y))
-        }).unwrap_or(0f64);
-        let eeg_max_2 = (&eeg_data_2).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmax(x.1, y))
-        }).unwrap_or(0f64);
-        let eeg_min_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmin(x.1, y))
-        }).unwrap_or(0f64);
-        let eeg_max_3 = (&eeg_data_3).iter().fold(None, |min, x| match min {
-            None => Some(x.1),
-            Some(y) => Some(fmax(x.1, y))
-        }).unwrap_or(0f64);
+        let eeg_min_1 = (&eeg_data_1)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmin(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_max_1 = (&eeg_data_1)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmax(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_min_2 = (&eeg_data_2)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmin(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_max_2 = (&eeg_data_2)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmax(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_min_3 = (&eeg_data_3)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmin(x.1, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_max_3 = (&eeg_data_3)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.1),
+                Some(y) => Some(fmax(x.1, y)),
+            })
+            .unwrap_or(0f64);
         let eeg_min = fmin(eeg_min_1, fmin(eeg_min_2, eeg_min_3));
         let eeg_max = fmax(eeg_max_1, fmax(eeg_max_2, eeg_max_3));
 
-        let eeg_min_x = (&eeg_data_1).iter().fold(None, |min, x| match min {
-            None => Some(x.0),
-            Some(y) => Some(fmin(x.0, y))
-        }).unwrap_or(0f64);
-        let eeg_max_x = (&eeg_data_1).iter().fold(None, |max, x| match max {
-            None => Some(x.0),
-            Some(y) => Some(fmax(x.0, y))
-        }).unwrap_or(0f64);
+        let eeg_min_x = (&eeg_data_1)
+            .iter()
+            .fold(None, |min, x| match min {
+                None => Some(x.0),
+                Some(y) => Some(fmin(x.0, y)),
+            })
+            .unwrap_or(0f64);
+        let eeg_max_x = (&eeg_data_1)
+            .iter()
+            .fold(None, |max, x| match max {
+                None => Some(x.0),
+                Some(y) => Some(fmax(x.0, y)),
+            })
+            .unwrap_or(0f64);
 
-        terminal.draw(|mut f| {
-            let size = f.size();
+        terminal
+            .draw(|mut f| {
+                let size = f.size();
 
-            let constraints_1 = vec![Constraint::Percentage(80), Constraint::Percentage(20)];
-            let constraints_2 = vec![Constraint::Percentage(50), Constraint::Percentage(50)];
-            let main_chunks = Layout::default()
-                .constraints(constraints_1)
-                .direction(Direction::Horizontal)
-                .split(size);
-            let chunks = Layout::default()
-                .constraints(constraints_2)
-                .direction(Direction::Vertical)
-                .split(main_chunks[0]);
+                let constraints_1 = vec![Constraint::Percentage(80), Constraint::Percentage(20)];
+                let constraints_2 = vec![Constraint::Percentage(50), Constraint::Percentage(50)];
+                let main_chunks = Layout::default()
+                    .constraints(constraints_1)
+                    .direction(Direction::Horizontal)
+                    .split(size);
+                let chunks = Layout::default()
+                    .constraints(constraints_2)
+                    .direction(Direction::Vertical)
+                    .split(main_chunks[0]);
 
-            // EEG Chart
+                // EEG Chart
 
-            Chart::default()
-                .block(
-                    Block::default()
-                        .title("Myo Data")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                    .title("Ticks")
-                    .style(Style::default().fg(Color::Gray))
-                    .labels_style(Style::default().modifier(Modifier::ITALIC))
-                    .bounds([eeg_min_x, eeg_max_x])
-                    .labels(&[&format!("{}", eeg_min_x), &format!("{}", eeg_max_x)])
-                )
-                .y_axis(
-                    Axis::default()
-                        .title("EEG")
-                        .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds([eeg_min, eeg_max])
-                        .labels(&[&format!("{}", eeg_min), &format!("{}", (eeg_min + eeg_max) / 2f64), &format!("{}", eeg_max)])
-                )
-                .datasets(&[
-                    Dataset::default()
-                        .name("attention")
-                        .marker(Marker::Dot)
-                        .style(Style::default().fg(Color::Yellow))
-                        .data(&eeg_data_1),
-                    Dataset::default()
-                        .name("meditation")
-                        .marker(Marker::Dot)
-                        .style(Style::default().fg(Color::Cyan))
-                        .data(&eeg_data_2),
-                    Dataset::default()
-                        .name("signal quality")
-                        .marker(Marker::Dot)
-                        .style(Style::default().fg(Color::Red))
-                        .data(&eeg_data_3),
-                ])
-                .render(&mut f, chunks[0]);
+                Chart::default()
+                    .block(
+                        Block::default()
+                            .title("Myo Data")
+                            .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                            .borders(Borders::ALL),
+                    )
+                    .x_axis(
+                        Axis::default()
+                            .title("Ticks")
+                            .style(Style::default().fg(Color::Gray))
+                            .labels_style(Style::default().modifier(Modifier::ITALIC))
+                            .bounds([eeg_min_x, eeg_max_x])
+                            .labels(&[&format!("{}", eeg_min_x), &format!("{}", eeg_max_x)]),
+                    )
+                    .y_axis(
+                        Axis::default()
+                            .title("EEG")
+                            .style(Style::default().fg(Color::Gray))
+                            .labels_style(Style::default().modifier(Modifier::ITALIC))
+                            .bounds([eeg_min, eeg_max])
+                            .labels(&[
+                                &format!("{}", eeg_min),
+                                &format!("{}", (eeg_min + eeg_max) / 2f64),
+                                &format!("{}", eeg_max),
+                            ]),
+                    )
+                    .datasets(&[
+                        Dataset::default()
+                            .name("attention")
+                            .marker(Marker::Dot)
+                            .style(Style::default().fg(Color::Yellow))
+                            .data(&eeg_data_1),
+                        Dataset::default()
+                            .name("meditation")
+                            .marker(Marker::Dot)
+                            .style(Style::default().fg(Color::Cyan))
+                            .data(&eeg_data_2),
+                        Dataset::default()
+                            .name("signal quality")
+                            .marker(Marker::Dot)
+                            .style(Style::default().fg(Color::Red))
+                            .data(&eeg_data_3),
+                    ])
+                    .render(&mut f, chunks[0]);
 
-            // MYO Chart
-            Chart::default()
-                .block(
-                    Block::default()
-                        .title("Myo Data")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                    .title("Ticks")
-                    .style(Style::default().fg(Color::Gray))
-                    .labels_style(Style::default().modifier(Modifier::ITALIC))
-                    .bounds([myo_min_x, myo_max_x])
-                    .labels(&[&format!("{}", myo_min_x), &format!("{}", myo_max_x)])
-                )
-                .y_axis(
-                    Axis::default()
-                        .title("MYO")
-                        .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds([myo_min, myo_max])
-                        .labels(&[&format!("{}", myo_min), &format!("{}", (myo_min + myo_max) / 2f64), &format!("{}", myo_max)])
-                )
-                .datasets(&[
-                    Dataset::default()
-                        .name("left")
-                        .marker(Marker::Dot)
-                        .style(Style::default().fg(Color::Cyan))
-                        .data(&myo_left_dataset),
-                    Dataset::default()
-                        .name("right")
-                        .marker(Marker::Braille)
-                        .style(Style::default().fg(Color::Yellow))
-                        .data(&myo_right_dataset),
-                ])
-                .render(&mut f, chunks[1]);
+                // MYO Chart
+                Chart::default()
+                    .block(
+                        Block::default()
+                            .title("Myo Data")
+                            .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                            .borders(Borders::ALL),
+                    )
+                    .x_axis(
+                        Axis::default()
+                            .title("Ticks")
+                            .style(Style::default().fg(Color::Gray))
+                            .labels_style(Style::default().modifier(Modifier::ITALIC))
+                            .bounds([myo_min_x, myo_max_x])
+                            .labels(&[&format!("{}", myo_min_x), &format!("{}", myo_max_x)]),
+                    )
+                    .y_axis(
+                        Axis::default()
+                            .title("MYO")
+                            .style(Style::default().fg(Color::Gray))
+                            .labels_style(Style::default().modifier(Modifier::ITALIC))
+                            .bounds([myo_min, myo_max])
+                            .labels(&[
+                                &format!("{}", myo_min),
+                                &format!("{}", (myo_min + myo_max) / 2f64),
+                                &format!("{}", myo_max),
+                            ]),
+                    )
+                    .datasets(&[
+                        Dataset::default()
+                            .name("left")
+                            .marker(Marker::Dot)
+                            .style(Style::default().fg(Color::Cyan))
+                            .data(&myo_left_dataset),
+                        Dataset::default()
+                            .name("right")
+                            .marker(Marker::Braille)
+                            .style(Style::default().fg(Color::Yellow))
+                            .data(&myo_right_dataset),
+                    ])
+                    .render(&mut f, chunks[1]);
 
-            let events_list = vec![
-                Text::styled(
-                    format!("Myo (L): {}", sending.0),
-                    Style::default().fg(Color::White),
-                ),
-                Text::styled(
-                    format!("Myo (R): {}", sending.1),
-                    Style::default().fg(Color::White),
-                ),
-                Text::styled(
-                    format!("EEG: {}", sending.2),
-                    Style::default().fg(Color::White),
-                ),
-            ];
-            List::new(events_list.into_iter())
-                .block(Block::default().borders(Borders::ALL).title("XAC Output"))
-                .render(&mut f, main_chunks[1]);
-
-        }).unwrap();
+                let events_list = vec![
+                    Text::styled(
+                        format!("Myo (L): {}", sending.0),
+                        Style::default().fg(Color::White),
+                    ),
+                    Text::styled(
+                        format!("Myo (R): {}", sending.1),
+                        Style::default().fg(Color::White),
+                    ),
+                    Text::styled(
+                        format!("EEG: {}", sending.2),
+                        Style::default().fg(Color::White),
+                    ),
+                ];
+                List::new(events_list.into_iter())
+                    .block(Block::default().borders(Borders::ALL).title("XAC Output"))
+                    .render(&mut f, main_chunks[1]);
+            })
+            .unwrap();
     }
 
     // Join all the threads - waits for anything they need to clean up to finish before we do any cleanup from the main thread
     eeg_join.join().expect("EEG thread failed to join");
     myo_join.join().expect("Myo thread failed to join");
-    collector_join.join().expect("Collector thread failed to join");
+    collector_join
+        .join()
+        .expect("Collector thread failed to join");
 
     // Cleanup phase
 

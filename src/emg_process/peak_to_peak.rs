@@ -81,7 +81,7 @@ impl PkPk {
             max: self.cur_max,
             min: self.cur_min,
             pkpk: self.cur_max - self.cur_min,
-            neutral: (self.cur_max - self.cur_min) / 2f64 + self.cur_min
+            neutral: (self.cur_max - self.cur_min) / 2f64 + self.cur_min,
         }
     }
 }
