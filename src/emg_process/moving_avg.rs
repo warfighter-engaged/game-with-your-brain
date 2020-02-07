@@ -34,11 +34,11 @@ impl MovingAverage {
     }
 
     pub fn newest_entry(&self) -> f64 {
-        self.data.last().unwrap_or(&0f64).clone()
+        *self.data.last().unwrap_or(&0f64)
     }
 
     pub fn oldest_entry(&self) -> f64 {
-        self.data.first().unwrap_or(&0f64).clone()
+        *self.data.first().unwrap_or(&0f64)
     }
 
     pub fn is_empty(&self) -> bool {

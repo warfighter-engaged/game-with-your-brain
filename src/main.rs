@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+#![allow(dead_code)]
 
 mod eeg;
 mod emg_process;
@@ -265,7 +266,7 @@ pub fn main() -> Result<()> {
                     } else {
                         attention
                     };
-                    let attention = (attention - EEG_LOWER_BOUND)
+                    let _attention = (attention - EEG_LOWER_BOUND)
                         * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
 
                     // sending.2 = attention;
@@ -278,7 +279,7 @@ pub fn main() -> Result<()> {
                     }
                     myo_left_data.push((current_time, val));
 
-                    let b_val = val > MYO_THRESHOLD;
+                    let _b_val = val > MYO_THRESHOLD;
                     // sending.0 = b_val;
                     // output.update_left_btn(b_val);
                 }
@@ -288,7 +289,7 @@ pub fn main() -> Result<()> {
                     }
                     myo_right_data.push((current_time, val));
 
-                    let b_val = val > MYO_THRESHOLD;
+                    let _b_val = val > MYO_THRESHOLD;
                     // sending.1 = b_val;
                     // output.update_right_btn(b_val);
                 }

@@ -48,7 +48,7 @@ impl MyoReader {
         })
     }
 
-    fn update_channel(&mut self, channel: u8) -> Result<()> {
+    fn update_channel(&mut self, channel: u8, differential: bool) -> Result<()> {
         // conversion is configured for single-ended conversion on the specified channel.
         // for example:
         // transmit -> byte1 = 0b0000_0001 (start bit)
@@ -59,8 +59,11 @@ impl MyoReader {
         //             byte3 = b7 - b0
         // after conversion merge read_buffer[1] and read_buffer[2] to get final result
 
-        let mut command: u8 = 0b11 << 6;
-        command |= (channel & 0x07) << 3;
+        let sgldiff = if differential { 0 } else { 1 };
+
+        let command: u8 = (0x01 << 7) |
+                          (sgldiff << 6) |
+                          ((channel & 0x7) << 3);
 
         let tx_buf = [command, 0x0, 0x0];
         let mut rx_buf = [0_u8; 3];
@@ -83,8 +86,8 @@ impl MyoReader {
     pub fn update(&mut self) -> Result<()> {
         self.new_data = false;
 
-        self.update_channel(Side::Left as u8)?;
-        self.update_channel(Side::Right as u8)?;
+        self.update_channel(Side::Left as u8, false)?;
+        self.update_channel(Side::Right as u8, false)?;
 
         Ok(())
     }
