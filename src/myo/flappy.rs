@@ -37,6 +37,7 @@ impl Flappy {
         }
     }
 
+    /// Gets the sEMG envelope; use this value directly to determine the threshold during calibration
     pub fn get_envelope(&mut self, data: u16) -> i32 {
         let data_after_filter = self.filter.update(data as i32); // filter processing
         data_after_filter.pow(2) // get envelope by squaring the input

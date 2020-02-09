@@ -4,14 +4,19 @@
 //! Since the Pi's analog audio output uses both PWM channels, using them and playing
 //! audio simultaneously may cause issues.
 
-mod adafruit3502;
-mod mcp4922;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "adafruit")] {
+        mod adafruit3502;
+        use rppal::i2c;
+    } else {
+        mod mcp4922;
+        use rppal::spi;
+    }
+}
 
 use crate::Result;
 
 use rppal::gpio;
-// use rppal::i2c;
-use rppal::spi;
 
 const GPIO_LEFT_BTN: u8 = 23; // BCM GPIO 23 is tied to phyiscal pin 16
 const GPIO_RIGHT_BTN: u8 = 22; // BCM GPIO 22 is tied to physical pin 15
@@ -21,11 +26,20 @@ const I2C_TRIGGER_BUS: u8 = 1; // For the early model B Rev 1, bus 0 is selected
 
 const SPI_MAX_CLOCK_SPEED: u32 = 1000; // This approximates the Arduino ADC default sample rate
 
-pub struct Springboard {
-    left_btn: gpio::OutputPin,
-    right_btn: gpio::OutputPin,
-
-    trigger: mcp4922::Mcp4922,
+cfg_if::cfg_if! {
+    if #[cfg(feature = "adafruit")] {
+        pub struct Springboard {
+            left_btn: gpio::OutputPin,
+            right_btn: gpio::OutputPin,
+            trigger: adafruit3502::AdafruitDS3502,
+        }
+    } else {
+        pub struct Springboard {
+            left_btn: gpio::OutputPin,
+            right_btn: gpio::OutputPin,
+            trigger: mcp4922::Mcp4922,
+        }
+    }
 }
 
 impl Springboard {
@@ -34,19 +48,21 @@ impl Springboard {
         let left_btn = gpio_.get(GPIO_LEFT_BTN)?.into_output();
         let right_btn = gpio_.get(GPIO_RIGHT_BTN)?.into_output();
 
-        let trigger_bus = spi::Spi::new(
-            spi::Bus::Spi0,
-            spi::SlaveSelect::Ss1,
-            SPI_MAX_CLOCK_SPEED,
-            spi::Mode::Mode0,
-        )?;
-        let trigger = mcp4922::Mcp4922::new(trigger_bus);
-
-        /*
-        let trigger_bus = i2c::I2c::with_bus(I2C_TRIGGER_BUS)?;
-        let mut trigger = adafruit3502::AdafruitDS3502::new(trigger_bus);
-        trigger.begin(adafruit3502::DS3502_I2CADDR_DEFAULT)?;
-        */
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "adafruit")] {
+                let trigger_bus = i2c::I2c::with_bus(I2C_TRIGGER_BUS)?;
+                let mut trigger = adafruit3502::AdafruitDS3502::new(trigger_bus);
+                trigger.begin(adafruit3502::DS3502_I2CADDR_DEFAULT)?;
+            } else {
+                let trigger_bus = spi::Spi::new(
+                    spi::Bus::Spi0,
+                    spi::SlaveSelect::Ss1,
+                    SPI_MAX_CLOCK_SPEED,
+                    spi::Mode::Mode0,
+                )?;
+                let trigger = mcp4922::Mcp4922::new(trigger_bus);
+            }
+        }
 
         Ok(Self {
             left_btn,
@@ -73,9 +89,18 @@ impl Springboard {
 
     /// Update the trigger pull to a value in the range [0, 100]
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
-        // The wiper expects a value in the range [0, 127]
-        self.trigger
-            .set_wiper(mcp4922::Channel::CHA, (value * 4095f64 / 100f64) as u16)?;
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "adafruit")] {
+                // The wiper expects a value in the range [0, 127]
+                self.trigger.set_wiper((value * 127f64 / 100f64) as u8)?;
+            } else {
+                // The wiper expects a value in the range [0, 4095]
+                self.trigger
+                    .set_wiper(mcp4922::Channel::CHA, (value * 4095f64 / 100f64) as u16)?;
+            }
+        }
+        
         Ok(())
     }
 }
