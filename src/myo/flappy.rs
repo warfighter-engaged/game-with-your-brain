@@ -3,10 +3,9 @@ use super::emg_filters;
 const SAMPLE_RATE: emg_filters::SampleFrequency = emg_filters::SampleFrequency::Freq1000Hz;
 const NOTCH_FREQ: emg_filters::NotchFrequency = emg_filters::NotchFrequency::Freq60Hz;
 
-struct Flappy {
+pub struct Flappy {
     threshold: i32,
     start_emitting: bool,
-    emit_number: u32,
 
     filter: emg_filters::EMGFilters,
 
@@ -25,7 +24,7 @@ impl Flappy {
         Flappy {
             threshold: 0, // 0 in the calibration process
             start_emitting: false,
-            emit_number: 0,
+
             filter,
 
             integral_data: 0,
@@ -37,30 +36,27 @@ impl Flappy {
         }
     }
 
-    /// Gets the sEMG envelope; use this value directly to determine the threshold during calibration
-    pub fn get_envelope(&mut self, data: u16) -> i32 {
+    pub fn calibration(&mut self, data: u16) -> i32 {
         let data_after_filter = self.filter.update(data as i32); // filter processing
         data_after_filter.pow(2) // get envelope by squaring the input
     }
 
     /// Takes in the result of an analog read at 1000Hz. Returns true if
     /// the muscle is flexed, false otherwise.
-    pub fn update(&mut self, data: u16) -> bool {
-        let envelope = self.get_envelope(data);
+    pub fn update(&mut self, data: u16) -> (bool, i32) {
+        let envelope = self.calibration(data);
+
         let envelope = if envelope > self.threshold {
             envelope
         } else {
             0
-        }; // // The data set below the base value is set to 0, indicating that it is in a relaxed state
+        }; // The data set below the base value is set to 0, indicating that it is in a relaxed state
 
         let result = self.start_emitting;
-        if result {
-            self.emit_number += 1;
-        }
 
         self.get_emg_count(envelope);
 
-        result
+        (result, envelope)
     }
 
     /// If get EMG signal, return true

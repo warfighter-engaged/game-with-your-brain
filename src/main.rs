@@ -111,8 +111,8 @@ mod event {
 
 enum DeviceSignal {
     Eeg(u8, u8, u8),
-    Myo1(f64),
-    Myo2(f64),
+    Myo1(bool, i32),
+    Myo2(bool, i32),
 }
 
 fn fmin(v1: f64, v2: f64) -> f64 {
@@ -199,14 +199,16 @@ pub fn main() -> Result<()> {
                     continue;
                 }
                 Ok(true) => {
+                    let (s, v) = myo_parser.get_value(myo::Side::Left);
                     if let Err(_err) =
-                        myo_tx.send(DeviceSignal::Myo1(myo_parser.get_value(myo::Side::Left)))
+                        myo_tx.send(DeviceSignal::Myo1(s, v))
                     {
                         println!("failed to send data");
                         break;
                     }
+                    let (s, v) = myo_parser.get_value(myo::Side::Right);
                     if let Err(_err) =
-                        myo_tx.send(DeviceSignal::Myo2(myo_parser.get_value(myo::Side::Right)))
+                        myo_tx.send(DeviceSignal::Myo2(s, v))
                     {
                         println!("failed to send data");
                         break;
@@ -272,26 +274,24 @@ pub fn main() -> Result<()> {
                     // sending.2 = attention;
                     // output.update_trigger(attention).expect("failed to write to XAC");
                 }
-                DeviceSignal::Myo1(val) => {
+                DeviceSignal::Myo1(_state, val) => {
                     // println!("MYO (Left): {}", val);
                     if myo_left_data.len() > 512 {
                         myo_left_data.remove(0);
                     }
-                    myo_left_data.push((current_time, val));
+                    myo_left_data.push((current_time, val as f64));
 
-                    let _b_val = val > MYO_THRESHOLD;
-                    // sending.0 = b_val;
-                    // output.update_left_btn(b_val);
+                    // sending.0 = state;
+                    // output.update_left_btn(state);
                 }
-                DeviceSignal::Myo2(val) => {
+                DeviceSignal::Myo2(_state, val) => {
                     if myo_right_data.len() > 512 {
                         myo_right_data.remove(0);
                     }
-                    myo_right_data.push((current_time, val));
+                    myo_right_data.push((current_time, val as f64));
 
-                    let _b_val = val > MYO_THRESHOLD;
-                    // sending.1 = b_val;
-                    // output.update_right_btn(b_val);
+                    // sending.1 = state;
+                    // output.update_right_btn(state);
                 }
             }
             collector_tx

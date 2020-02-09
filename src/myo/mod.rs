@@ -17,7 +17,7 @@
 
 use crate::Result;
 
-use crate::emg_process::*;
+// use crate::emg_process::*;
 use rppal::spi;
 
 mod emg_filters;
@@ -104,11 +104,13 @@ impl MyoReader {
 
 pub struct MyoParser {
     reader: MyoReader,
-    left_emg: EMG,
-    right_emg: EMG,
+    left_emg: flappy::Flappy,
+    right_emg: flappy::Flappy,
 
-    left_val: f64,
-    right_val: f64,
+    left_val: i32,
+    left_state: bool,
+    right_val: i32,
+    right_state: bool,
 }
 
 impl MyoParser {
@@ -116,24 +118,12 @@ impl MyoParser {
     pub fn new() -> Result<Self> {
         Ok(Self {
             reader: MyoReader::init()?,
-            left_emg: EMG::new(
-                SPI_MAX_CLOCK_SPEED as usize,
-                0.2f64,
-                40,
-                150,
-                EmgOptions::HighPassFilterOn,
-                EmgOptions::ReferenceUnavailable,
-            ),
-            right_emg: EMG::new(
-                SPI_MAX_CLOCK_SPEED as usize,
-                0.2f64,
-                40,
-                150,
-                EmgOptions::HighPassFilterOn,
-                EmgOptions::ReferenceUnavailable,
-            ),
-            left_val: 0f64,
-            right_val: 0f64,
+            left_emg: flappy::Flappy::new(),
+            right_emg: flappy::Flappy::new(),
+            left_val: 0,
+            left_state: false,
+            right_val: 0,
+            right_state: false,
         })
     }
 
@@ -143,22 +133,23 @@ impl MyoParser {
         let res = self.reader.has_new_data();
 
         if res {
-            self.left_val = self
-                .left_emg
-                .filter_emg(self.reader.get_value(Side::Left) as f64);
-            self.right_val = self
-                .right_emg
-                .filter_emg(self.reader.get_value(Side::Right) as f64);
+            let (ls, lv) = self.left_emg.update(self.reader.get_value(Side::Left));
+            let (rs, rv) = self.right_emg.update(self.reader.get_value(Side::Right));
+
+            self.left_val = lv;
+            self.left_state = ls;
+            self.right_val = rv;
+            self.right_state = rs;
         }
 
         Ok(res)
     }
 
     /// Gets the SDFT result for the given side
-    pub fn get_value(&self, side: Side) -> f64 {
+    pub fn get_value(&self, side: Side) -> (bool, i32) {
         match side {
-            Side::Left => self.left_val,
-            Side::Right => self.right_val,
+            Side::Left => (self.left_state, self.left_val),
+            Side::Right => (self.right_state, self.right_val),
         }
     }
 }

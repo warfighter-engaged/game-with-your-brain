@@ -24,7 +24,7 @@ const GPIO_RIGHT_BTN: u8 = 22; // BCM GPIO 22 is tied to physical pin 15
 const I2C_TRIGGER_BUS: u8 = 1; // For the early model B Rev 1, bus 0 is selected. For every other model, bus 1 is used.
                                // This is tied to physical pin 3 and 5 (SDA and SCL)
 
-const SPI_MAX_CLOCK_SPEED: u32 = 1000; // This approximates the Arduino ADC default sample rate
+const SPI_MAX_CLOCK_SPEED: u32 = 1000;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "adafruit")] {
