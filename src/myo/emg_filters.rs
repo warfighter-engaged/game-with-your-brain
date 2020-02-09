@@ -20,31 +20,31 @@ pub enum SampleFrequency {
 
 // coefficients of transfer function of LPF
 // coef[sampleFreqInd][order]
-const LPF_NUMERATOR_COEF: [[f32; 3]; 2] =   [[0.3913, 0.7827, 0.3913],
-                                             [0.1311, 0.2622, 0.1311]];
-const LPF_DENOMINATOR_COEF: [[f32; 3]; 2] = [[1.0000, 0.3695, 0.1958],
-                                             [1.0000, -0.7478, 0.2722]];
+const LPF_NUMERATOR_COEF: [[f32; 3]; 2] = [[0.3913, 0.7827, 0.3913], [0.1311, 0.2622, 0.1311]];
+const LPF_DENOMINATOR_COEF: [[f32; 3]; 2] = [[1.0000, 0.3695, 0.1958], [1.0000, -0.7478, 0.2722]];
 // coefficients of transfer function of HPF
-const HPF_NUMERATOR_COEF: [[f32; 3]; 2] =   [[0.8371, -1.6742, 0.8371],
-                                             [0.9150, -1.8299, 0.9150]];
-const HPF_DENOMINATOR_COEF: [[f32; 3]; 2] = [[1.0000, -1.6475, 0.7009],
-                                             [1.0000, -1.8227, 0.8372]];
+const HPF_NUMERATOR_COEF: [[f32; 3]; 2] = [[0.8371, -1.6742, 0.8371], [0.9150, -1.8299, 0.9150]];
+const HPF_DENOMINATOR_COEF: [[f32; 3]; 2] = [[1.0000, -1.6475, 0.7009], [1.0000, -1.8227, 0.8372]];
 // coefficients of transfer function of anti-hum filter
 // coef[sampleFreqInd][order] for 50Hz
 const AHF_NUMERATOR_COEF_50HZ: [[f32; 6]; 2] = [
     [0.9522, -1.5407, 0.9522, 0.8158, -0.8045, 0.0855],
-    [0.5869, -1.1146, 0.5869, 1.0499, -2.0000, 1.0499]];
+    [0.5869, -1.1146, 0.5869, 1.0499, -2.0000, 1.0499],
+];
 const AHF_DENOMINATOR_COEF_50HZ: [[f32; 6]; 2] = [
     [1.0000, -1.5395, 0.9056, 1.0000, -1.1187, 0.3129],
-    [1.0000, -1.8844, 0.9893, 1.0000, -1.8991, 0.9892]];
+    [1.0000, -1.8844, 0.9893, 1.0000, -1.8991, 0.9892],
+];
 const AHF_OUTPUT_GAIN_COEF_50HZ: [f32; 2] = [1.3422, 1.4399];
 // coef[sampleFreqInd][order] for 60Hz
 const AHF_NUMERATOR_COEF_60HZ: [[f32; 6]; 2] = [
     [0.9528, -1.3891, 0.9528, 0.8272, -0.7225, 0.0264],
-    [0.5824, -1.0810, 0.5824, 1.0736, -2.0000, 1.0736]];
+    [0.5824, -1.0810, 0.5824, 1.0736, -2.0000, 1.0736],
+];
 const AHF_DENOMINATOR_COEF_60HZ: [[f32; 6]; 2] = [
     [1.0000, -1.3880, 0.9066, 1.0000, -0.9739, 0.2371],
-    [1.0000, -1.8407, 0.9894, 1.0000, -1.8584, 0.9891]];
+    [1.0000, -1.8407, 0.9894, 1.0000, -1.8584, 0.9891],
+];
 const AHF_OUTPUT_GAIN_COEF_60HZ: [f32; 2] = [1.3430, 1.4206];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -82,16 +82,14 @@ impl Filter2nd {
             }
         };
 
-        Filter2nd {
-            states,
-            num,
-            den
-        }
+        Filter2nd { states, num, den }
     }
 
     pub fn update(&mut self, input: f32) -> f32 {
-        let tmp = (input - self.den[1] * self.states[0] - self.den[2] * self.states[1]) / self.den[0];
-        let output = self.num[0] * tmp + self.num[1] * self.states[0] + self.num[2] * self.states[1];
+        let tmp =
+            (input - self.den[1] * self.states[0] - self.den[2] * self.states[1]) / self.den[0];
+        let output =
+            self.num[0] * tmp + self.num[1] * self.states[0] + self.num[2] * self.states[1];
         // save last states
         self.states[1] = self.states[0];
         self.states[0] = tmp;
@@ -103,31 +101,43 @@ struct Filter4th {
     states: [f32; 4],
     num: [f32; 6],
     den: [f32; 6],
-    gain: f32
+    gain: f32,
 }
 
 impl Filter4th {
     pub fn new(sample_freq: SampleFrequency, hum_freq: NotchFrequency) -> Self {
         let states = [0f32; 4];
         let (num, den, gain) = match hum_freq {
-            NotchFrequency::Freq50Hz => {
-                match sample_freq {
-                    SampleFrequency::Freq500Hz => (AHF_NUMERATOR_COEF_50HZ[0], AHF_DENOMINATOR_COEF_50HZ[0], AHF_OUTPUT_GAIN_COEF_50HZ[0]),
-                    SampleFrequency::Freq1000Hz => (AHF_NUMERATOR_COEF_50HZ[1], AHF_DENOMINATOR_COEF_50HZ[1], AHF_OUTPUT_GAIN_COEF_50HZ[1])
-                }
-            }
-            NotchFrequency::Freq60Hz => {
-                match sample_freq {
-                    SampleFrequency::Freq500Hz => (AHF_NUMERATOR_COEF_60HZ[0], AHF_DENOMINATOR_COEF_60HZ[0], AHF_OUTPUT_GAIN_COEF_60HZ[0]),
-                    SampleFrequency::Freq1000Hz => (AHF_NUMERATOR_COEF_60HZ[1], AHF_DENOMINATOR_COEF_60HZ[1], AHF_OUTPUT_GAIN_COEF_60HZ[1])
-                }
-            }
+            NotchFrequency::Freq50Hz => match sample_freq {
+                SampleFrequency::Freq500Hz => (
+                    AHF_NUMERATOR_COEF_50HZ[0],
+                    AHF_DENOMINATOR_COEF_50HZ[0],
+                    AHF_OUTPUT_GAIN_COEF_50HZ[0],
+                ),
+                SampleFrequency::Freq1000Hz => (
+                    AHF_NUMERATOR_COEF_50HZ[1],
+                    AHF_DENOMINATOR_COEF_50HZ[1],
+                    AHF_OUTPUT_GAIN_COEF_50HZ[1],
+                ),
+            },
+            NotchFrequency::Freq60Hz => match sample_freq {
+                SampleFrequency::Freq500Hz => (
+                    AHF_NUMERATOR_COEF_60HZ[0],
+                    AHF_DENOMINATOR_COEF_60HZ[0],
+                    AHF_OUTPUT_GAIN_COEF_60HZ[0],
+                ),
+                SampleFrequency::Freq1000Hz => (
+                    AHF_NUMERATOR_COEF_60HZ[1],
+                    AHF_DENOMINATOR_COEF_60HZ[1],
+                    AHF_OUTPUT_GAIN_COEF_60HZ[1],
+                ),
+            },
         };
         Filter4th {
             states,
             num,
             den,
-            gain
+            gain,
         }
     }
     pub fn update(&mut self, input: f32) -> f32 {
@@ -140,7 +150,6 @@ impl Filter4th {
         self.gain * stage_out
     }
 }
-
 
 pub struct EMGFilters {
     sample_freq: SampleFrequency,
@@ -156,9 +165,17 @@ pub struct EMGFilters {
 }
 
 impl EMGFilters {
-    pub fn new(sample_freq: SampleFrequency, notch_freq: NotchFrequency, enable_notch_filter: bool, enable_lowpass_filter: bool, enable_highpass_filter: bool) -> Self {
-        let bypass_enabled = !(((sample_freq == SampleFrequency::Freq500Hz) || (sample_freq == SampleFrequency::Freq1000Hz)) &&
-        ((notch_freq == NotchFrequency::Freq50Hz) || (notch_freq == NotchFrequency::Freq60Hz)));
+    pub fn new(
+        sample_freq: SampleFrequency,
+        notch_freq: NotchFrequency,
+        enable_notch_filter: bool,
+        enable_lowpass_filter: bool,
+        enable_highpass_filter: bool,
+    ) -> Self {
+        let bypass_enabled = !(((sample_freq == SampleFrequency::Freq500Hz)
+            || (sample_freq == SampleFrequency::Freq1000Hz))
+            && ((notch_freq == NotchFrequency::Freq50Hz)
+                || (notch_freq == NotchFrequency::Freq60Hz)));
         EMGFilters {
             sample_freq,
             notch_freq,

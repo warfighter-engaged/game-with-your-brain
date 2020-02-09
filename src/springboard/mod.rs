@@ -34,7 +34,12 @@ impl Springboard {
         let left_btn = gpio_.get(GPIO_LEFT_BTN)?.into_output();
         let right_btn = gpio_.get(GPIO_RIGHT_BTN)?.into_output();
 
-        let trigger_bus = spi::Spi::new(spi::Bus::Spi0, spi::SlaveSelect::Ss1, SPI_MAX_CLOCK_SPEED, spi::Mode::Mode0)?;
+        let trigger_bus = spi::Spi::new(
+            spi::Bus::Spi0,
+            spi::SlaveSelect::Ss1,
+            SPI_MAX_CLOCK_SPEED,
+            spi::Mode::Mode0,
+        )?;
         let trigger = mcp4922::Mcp4922::new(trigger_bus);
 
         /*
@@ -69,7 +74,8 @@ impl Springboard {
     /// Update the trigger pull to a value in the range [0, 100]
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
         // The wiper expects a value in the range [0, 127]
-        self.trigger.set_wiper(mcp4922::Channel::CHA, (value * 4095f64 / 100f64) as u16)?;
+        self.trigger
+            .set_wiper(mcp4922::Channel::CHA, (value * 4095f64 / 100f64) as u16)?;
         Ok(())
     }
 }

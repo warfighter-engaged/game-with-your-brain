@@ -64,9 +64,7 @@ impl MyoReader {
 
         let sgldiff = if differential { 0 } else { 1 };
 
-        let command: u8 = (0x01 << 7) |
-                          (sgldiff << 6) |
-                          ((channel & 0x7) << 3);
+        let command: u8 = (0x01 << 7) | (sgldiff << 6) | ((channel & 0x7) << 3);
 
         let tx_buf = [command, 0x0, 0x0];
         let mut rx_buf = [0_u8; 3];

@@ -46,7 +46,11 @@ impl Flappy {
     /// the muscle is flexed, false otherwise.
     pub fn update(&mut self, data: u16) -> bool {
         let envelope = self.get_envelope(data);
-        let envelope = if envelope > self.threshold { envelope } else { 0 }; // // The data set below the base value is set to 0, indicating that it is in a relaxed state
+        let envelope = if envelope > self.threshold {
+            envelope
+        } else {
+            0
+        }; // // The data set below the base value is set to 0, indicating that it is in a relaxed state
 
         let result = self.start_emitting;
         if result {
