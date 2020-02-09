@@ -20,6 +20,8 @@ use crate::Result;
 use crate::emg_process::*;
 use rppal::spi;
 
+mod emg_filters;
+
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
 const SPI_MAX_CLOCK_SPEED: u32 = 1000; // This approximates the Arduino ADC default sample rate
