@@ -173,16 +173,16 @@ impl EMGFilters {
         }
     }
 
-    pub fn update(&mut self, input_value: f32) -> f32 {
-        let mut output = input_value;
+    pub fn update(&mut self, input_value: i32) -> i32 {
+        let mut output = input_value as f32;
 
         if self.bypass_enabled {
-            return output;
+            return input_value;
         }
 
         // first notch filter
         if self.notch_filter_enabled {
-            output = self.ahf.update(input_value);
+            output = self.ahf.update(output);
         }
 
         // second low pass filter
@@ -195,6 +195,6 @@ impl EMGFilters {
             output = self.hpf.update(output);
         }
 
-        output
+        output as i32
     }
 }

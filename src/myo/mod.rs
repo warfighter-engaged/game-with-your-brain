@@ -21,6 +21,7 @@ use crate::emg_process::*;
 use rppal::spi;
 
 mod emg_filters;
+mod flappy;
 
 const SPI_BUS: spi::Bus = spi::Bus::Spi0;
 const SPI_SLAVE_SELECT: spi::SlaveSelect = spi::SlaveSelect::Ss0;
