@@ -22,7 +22,7 @@ impl Flappy {
     pub fn new() -> Self {
         let filter = emg_filters::EMGFilters::new(SAMPLE_RATE, NOTCH_FREQ, true, true, true);
         Flappy {
-            threshold: 0, // 0 in the calibration process
+            threshold: 100, // 0 in the calibration process
             start_emitting: false,
 
             filter,

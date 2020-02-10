@@ -106,6 +106,10 @@ mod event {
         pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
             self.rx.recv()
         }
+
+        pub fn next_nonblocking(&self) -> Result<Event<Key>, mpsc::TryRecvError> {
+            self.rx.try_recv()
+        }
     }
 }
 
@@ -200,16 +204,12 @@ pub fn main() -> Result<()> {
                 }
                 Ok(true) => {
                     let (s, v) = myo_parser.get_value(myo::Side::Left);
-                    if let Err(_err) =
-                        myo_tx.send(DeviceSignal::Myo1(s, v))
-                    {
+                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo1(s, v)) {
                         println!("failed to send data");
                         break;
                     }
                     let (s, v) = myo_parser.get_value(myo::Side::Right);
-                    if let Err(_err) =
-                        myo_tx.send(DeviceSignal::Myo2(s, v))
-                    {
+                    if let Err(_err) = myo_tx.send(DeviceSignal::Myo2(s, v)) {
                         println!("failed to send data");
                         break;
                     }
@@ -219,9 +219,15 @@ pub fn main() -> Result<()> {
         }
     });
 
-    let (tx_o, rx_o) = std::sync::mpsc::channel();
+    let (mut rx_o, tx_o) = single_value_channel::channel_starting_with((
+        vec![],
+        vec![],
+        vec![],
+        (false, false, 0f64),
+        0f64,
+        false,
+    ));
 
-    let collector_tx = tx_o.clone();
     let collector_running = running.clone();
     let collector_join = std::thread::spawn(move || {
         let mut output = {
@@ -245,11 +251,13 @@ pub fn main() -> Result<()> {
 
         let mut sending = (false, false, 0f64);
 
+        let mut override_output = false;
+
         while collector_running.load(Ordering::SeqCst) {
             let data = rx.recv().unwrap();
-            const MYO_THRESHOLD: f64 = 85f64;
             const EEG_LOWER_BOUND: f64 = 20f64;
             const EEG_UPPER_BOUND: f64 = 80f64;
+            const DATA_AMOUNT: usize = 200;
             match data {
                 DeviceSignal::Eeg(attention, meditation, signal_quality) => {
                     last_data[0] = u16::from(attention);
@@ -257,6 +265,9 @@ pub fn main() -> Result<()> {
                     last_data[2] = u16::from(signal_quality);
 
                     eeg_data.push((current_time, last_data));
+                    if eeg_data.len() > DATA_AMOUNT {
+                        eeg_data.remove(0);
+                    }
 
                     // Shift attention to only count a range from 20-80
                     // Values outside that range are compressed to 0 or 100
@@ -268,75 +279,98 @@ pub fn main() -> Result<()> {
                     } else {
                         attention
                     };
-                    let _attention = (attention - EEG_LOWER_BOUND)
+                    let attention = (attention - EEG_LOWER_BOUND)
                         * (100f64 / (EEG_UPPER_BOUND - EEG_LOWER_BOUND));
 
-                    // sending.2 = attention;
-                    // output.update_trigger(attention).expect("failed to write to XAC");
+                    if !override_output {
+                        sending.2 = attention;
+                        output
+                            .update_trigger(attention)
+                            .expect("failed to write to XAC");
+                    }
                 }
-                DeviceSignal::Myo1(_state, val) => {
+                DeviceSignal::Myo1(state, val) => {
                     // println!("MYO (Left): {}", val);
-                    if myo_left_data.len() > 512 {
+                    if myo_left_data.len() > DATA_AMOUNT {
                         myo_left_data.remove(0);
                     }
                     myo_left_data.push((current_time, val as f64));
 
-                    // sending.0 = state;
-                    // output.update_left_btn(state);
+                    if !override_output {
+                        sending.0 = state;
+                        output.update_left_btn(state);
+                    }
                 }
-                DeviceSignal::Myo2(_state, val) => {
-                    if myo_right_data.len() > 512 {
+                DeviceSignal::Myo2(state, val) => {
+                    if myo_right_data.len() > DATA_AMOUNT {
                         myo_right_data.remove(0);
                     }
                     myo_right_data.push((current_time, val as f64));
 
-                    // sending.1 = state;
-                    // output.update_right_btn(state);
+                    if !override_output {
+                        sending.1 = state;
+                        output.update_right_btn(state);
+                    }
                 }
             }
-            collector_tx
-                .send((
-                    eeg_data.clone(),
-                    myo_left_data.clone(),
-                    myo_right_data.clone(),
-                    sending,
-                    current_time,
-                ))
-                .expect("failed to send");
+            tx_o.update((
+                eeg_data.clone(),
+                myo_left_data.clone(),
+                myo_right_data.clone(),
+                sending,
+                current_time,
+                override_output,
+            ))
+            .expect("failed to send");
             current_time += 0.5f64;
 
-            if let Ok(event::Event::Input(input)) = events.next() {
+            if let Ok(event::Event::Input(input)) = events.next_nonblocking() {
                 match input {
                     termion::event::Key::Char('q') => {
                         collector_running.store(false, Ordering::SeqCst);
                     }
                     termion::event::Key::Char('z') => {
-                        output.update_left_btn(true);
-                        sending.0 = true;
+                        if override_output {
+                            output.update_left_btn(true);
+                            sending.0 = true;
+                        }
                     }
                     termion::event::Key::Char('x') => {
-                        output.update_left_btn(false);
-                        sending.0 = false;
+                        if override_output {
+                            output.update_left_btn(false);
+                            sending.0 = false;
+                        }
                     }
                     termion::event::Key::Char('c') => {
-                        output.update_right_btn(true);
-                        sending.1 = true;
+                        if override_output {
+                            output.update_right_btn(true);
+                            sending.1 = true;
+                        }
                     }
                     termion::event::Key::Char('v') => {
-                        output.update_right_btn(false);
-                        sending.1 = false;
+                        if override_output {
+                            output.update_right_btn(false);
+                            sending.1 = false;
+                        }
                     }
                     termion::event::Key::Char('b') => {
-                        if let Err(e) = output.update_trigger(100f64) {
-                            println!("Error updating trigger: {:?}", e);
+                        if override_output {
+                            if let Err(e) = output.update_trigger(100f64) {
+                                println!("Error updating trigger: {:?}", e);
+                            }
+                            sending.2 = 100f64;
                         }
-                        sending.2 = 100f64;
                     }
                     termion::event::Key::Char('n') => {
-                        if let Err(e) = output.update_trigger(0f64) {
-                            println!("Error updating trigger: {:?}", e)
+                        if override_output {
+                            if let Err(e) = output.update_trigger(0f64) {
+                                println!("Error updating trigger: {:?}", e)
+                            }
+                            sending.2 = 0f64;
                         }
-                        sending.2 = 0f64;
+                    }
+                    termion::event::Key::Char('m') => {
+                        override_output = !override_output;
                     }
                     _ => (),
                 };
@@ -345,22 +379,8 @@ pub fn main() -> Result<()> {
     });
 
     while running.load(Ordering::SeqCst) {
-        let mut eeg_data: Vec<(f64, [u16; 3])> = vec![];
-        let mut myo_left_data: Vec<(f64, f64)> = vec![];
-        let mut myo_right_data: Vec<(f64, f64)> = vec![];
-        let mut had_some = false;
-        let mut sending = (false, false, 0f64);
-        while let Some((eeg, left, right, send, _curr_time)) = rx_o.try_iter().next() {
-            eeg_data = eeg;
-            myo_left_data = left;
-            myo_right_data = right;
-            had_some = true;
-            sending = send;
-        }
-
-        if !had_some {
-            continue;
-        }
+        let (eeg_data, myo_left_data, myo_right_data, sending, curr_time, override_output) =
+            rx_o.latest();
 
         let myo_left_dataset = myo_left_data.clone(); // TODO: Change me!
         let myo_right_dataset = myo_right_data.clone();
@@ -602,12 +622,26 @@ pub fn main() -> Result<()> {
                         format!("EEG: {}", sending.2),
                         Style::default().fg(Color::White),
                     ),
+                    Text::styled(
+                        format!("Curr time: {}", curr_time),
+                        Style::default().fg(Color::White),
+                    ),
+                    Text::styled(
+                        format!("Keyboard Override: {}", override_output),
+                        Style::default().fg(Color::White),
+                    ),
                 ];
                 List::new(events_list.into_iter())
                     .block(Block::default().borders(Borders::ALL).title("XAC Output"))
                     .render(&mut f, main_chunks[1]);
             })
             .unwrap();
+
+        // if let Ok(event::Event::Input(input)) = events.next() {
+        //     if let termion::event::Key::Char('q') = input {
+        //         running.store(false, Ordering::SeqCst);
+        //     }
+        // }
     }
 
     // Join all the threads - waits for anything they need to clean up to finish before we do any cleanup from the main thread

@@ -89,7 +89,6 @@ impl Springboard {
 
     /// Update the trigger pull to a value in the range [0, 100]
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
-
         cfg_if::cfg_if! {
             if #[cfg(feature = "adafruit")] {
                 // The wiper expects a value in the range [0, 127]
@@ -100,7 +99,7 @@ impl Springboard {
                     .set_wiper(mcp4922::Channel::CHA, (value * 4095f64 / 100f64) as u16)?;
             }
         }
-        
+
         Ok(())
     }
 }

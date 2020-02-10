@@ -13,6 +13,7 @@ float_extras = "0.1.6"
 tui = "0.6.2"
 termion = "1.5.3"
 cfg-if = "0.1.10"
+single_value_channel = "1.2.1"
 
 [profile.dev]
 panic = "abort"
