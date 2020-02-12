@@ -18,8 +18,10 @@ use crate::Result;
 
 use rppal::gpio;
 
-const GPIO_LEFT_BTN: u8 = 23; // BCM GPIO 23 is tied to phyiscal pin 16
-const GPIO_RIGHT_BTN: u8 = 22; // BCM GPIO 22 is tied to physical pin 15
+// BCM GPIO 22 is tied to physical pin 15
+const GPIO_LEFT_BTN: u8 = 22;
+// BCM GPIO 23 is tied to phyiscal pin 16
+const GPIO_RIGHT_BTN: u8 = 23;
 
 const I2C_TRIGGER_BUS: u8 = 1; // For the early model B Rev 1, bus 0 is selected. For every other model, bus 1 is used.
                                // This is tied to physical pin 3 and 5 (SDA and SCL)
@@ -73,17 +75,17 @@ impl Springboard {
 
     pub fn update_left_btn(&mut self, pressed: bool) {
         self.left_btn.write(if pressed {
-            gpio::Level::High
-        } else {
             gpio::Level::Low
+        } else {
+            gpio::Level::High
         });
     }
 
     pub fn update_right_btn(&mut self, pressed: bool) {
         self.right_btn.write(if pressed {
-            gpio::Level::High
-        } else {
             gpio::Level::Low
+        } else {
+            gpio::Level::High
         });
     }
 
@@ -93,6 +95,7 @@ impl Springboard {
             if #[cfg(feature = "adafruit")] {
                 // The wiper expects a value in the range [0, 127]
                 self.trigger.set_wiper((value * 127f64 / 100f64) as u8)?;
+                log!("Set wiper to: {}", self.trigger.wiper()?);
             } else {
                 // The wiper expects a value in the range [0, 4095]
                 self.trigger

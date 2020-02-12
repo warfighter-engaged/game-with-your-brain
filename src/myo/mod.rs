@@ -32,11 +32,12 @@ const SPI_MODE: spi::Mode = spi::Mode::Mode0;
 pub enum Side {
     Left = 0,
     Right = 1,
+    Analog = 2,
 }
 
 pub struct MyoReader {
     new_data: bool,
-    values: [u16; 2],
+    values: [u16; 3],
 
     spi: spi::Spi,
 }
@@ -46,7 +47,7 @@ impl MyoReader {
         let spi = spi::Spi::new(SPI_BUS, SPI_SLAVE_SELECT, SPI_MAX_CLOCK_SPEED, SPI_MODE)?;
         Ok(Self {
             new_data: false,
-            values: [0u16; 2],
+            values: [0u16; 3],
             spi,
         })
     }
@@ -111,6 +112,8 @@ pub struct MyoParser {
     left_state: bool,
     right_val: i32,
     right_state: bool,
+
+    analog_state: u16,
 }
 
 impl MyoParser {
@@ -124,6 +127,8 @@ impl MyoParser {
             left_state: false,
             right_val: 0,
             right_state: false,
+
+            analog_state: 0,
         })
     }
 
@@ -135,6 +140,12 @@ impl MyoParser {
         if res {
             let (ls, lv) = self.left_emg.update(self.reader.get_value(Side::Left));
             let (rs, rv) = self.right_emg.update(self.reader.get_value(Side::Right));
+
+            let analog_out = self.reader.get_value(Side::Analog);
+            if analog_out != self.analog_state {
+                log!("New analog reading: {}", analog_out);
+                self.analog_state = analog_out;
+            }
 
             self.left_val = lv;
             self.left_state = ls;
@@ -150,6 +161,7 @@ impl MyoParser {
         match side {
             Side::Left => (self.left_state, self.left_val),
             Side::Right => (self.right_state, self.right_val),
+            Side::Analog => (false, 0),
         }
     }
 }

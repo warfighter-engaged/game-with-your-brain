@@ -61,7 +61,7 @@ impl Flappy {
 
     /// If get EMG signal, return true
     fn get_emg_count(&mut self, gforce_envelope: i32) -> bool {
-        const TIME_STANDARD: u32 = 200;
+        const TIME_STANDARD: u32 = 75;
 
         /*
         The integral is processed to continuously add the signal value

@@ -1,16 +1,10 @@
 #![warn(clippy::all)]
 #![allow(dead_code)]
 
-mod eeg;
-mod emg_process;
-mod error;
-mod myo;
-mod springboard;
-
 pub use error::*;
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
@@ -25,6 +19,27 @@ use tui::Terminal;
 use simple_signal::{self, Signal};
 
 use rppal::system::DeviceInfo;
+
+
+lazy_static::lazy_static! {
+    static ref LOGS: Mutex<Vec<String>> = Mutex::new(vec![]);
+}
+
+pub fn _log(str: String) {
+    LOGS.lock().unwrap().push(str);
+}
+
+macro_rules! log {
+    ($($arg:tt)*) => ({
+        $crate::_log(format!($($arg)*));
+    })
+}
+
+mod eeg;
+mod emg_process;
+mod error;
+mod myo;
+mod springboard;
 
 mod event {
     use std::io;
@@ -136,7 +151,7 @@ fn fmax(v1: f64, v2: f64) -> f64 {
 }
 
 pub fn main() -> Result<()> {
-    println!("Running wfpi on a {}.", DeviceInfo::new()?.model());
+    log!("Running wfpi on a {}.", DeviceInfo::new()?.model());
 
     let stdout = std::io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
@@ -168,11 +183,11 @@ pub fn main() -> Result<()> {
     let eeg_run = running.clone();
     let eeg_join = std::thread::spawn(move || {
         let mut mindwave = eeg::Mindwave::init().expect("failed to initialize mindwave");
-        println!("Initialized mindwave");
+        log!("Initialized mindwave");
         while eeg_run.load(Ordering::SeqCst) {
             if let Err(err) = mindwave.update() {
-                println!("failed to update mindwave: {}", err);
-                println!("sleeping for 5 seconds...");
+                log!("failed to update mindwave: {}", err);
+                log!("sleeping for 5 seconds...");
                 std::thread::sleep(std::time::Duration::from_secs(5));
                 continue;
             }
@@ -182,7 +197,7 @@ pub fn main() -> Result<()> {
                     mindwave.get_meditation(),
                     mindwave.get_quality(),
                 )) {
-                    println!("failed to send data"); // This happens if the receiver has already hung up. Not really an error, but we don't want to keep shouting at a hung-up receiver, so we just break the loop.
+                    log!("failed to send data"); // This happens if the receiver has already hung up. Not really an error, but we don't want to keep shouting at a hung-up receiver, so we just break the loop.
                     break;
                 }
             }
@@ -193,24 +208,24 @@ pub fn main() -> Result<()> {
     let myo_run = running.clone();
     let myo_join = std::thread::spawn(move || {
         let mut myo_parser = myo::MyoParser::new().expect("MYO parser failed to initialize");
-        println!("Initialized myo");
+        log!("Initialized myo");
         while myo_run.load(Ordering::SeqCst) {
             match myo_parser.update() {
                 Err(err) => {
-                    println!("failed to update myo: {}", err);
-                    println!("sleeping for 5 seconds...");
+                    log!("failed to update myo: {}", err);
+                    log!("sleeping for 5 seconds...");
                     std::thread::sleep(std::time::Duration::from_secs(5)); // TODO: Look for ways to interrupt this from a Ctrl-C signal.
                     continue;
                 }
                 Ok(true) => {
                     let (s, v) = myo_parser.get_value(myo::Side::Left);
                     if let Err(_err) = myo_tx.send(DeviceSignal::Myo1(s, v)) {
-                        println!("failed to send data");
+                        log!("failed to send data");
                         break;
                     }
                     let (s, v) = myo_parser.get_value(myo::Side::Right);
                     if let Err(_err) = myo_tx.send(DeviceSignal::Myo2(s, v)) {
-                        println!("failed to send data");
+                        log!("failed to send data");
                         break;
                     }
                 }
@@ -233,8 +248,8 @@ pub fn main() -> Result<()> {
         let mut output = {
             let mut res = springboard::Springboard::init();
             while res.is_err() && collector_running.load(Ordering::SeqCst) {
-                println!("failed to connect to XAC: {}", res.err().unwrap());
-                println!("sleeping for 5 seconds...");
+                log!("failed to connect to XAC: {}", res.err().unwrap());
+                log!("sleeping for 5 seconds...");
                 std::thread::sleep(std::time::Duration::from_secs(5));
                 res = springboard::Springboard::init();
             }
@@ -290,7 +305,7 @@ pub fn main() -> Result<()> {
                     }
                 }
                 DeviceSignal::Myo1(state, val) => {
-                    // println!("MYO (Left): {}", val);
+                    // log!("MYO (Left): {}", val);
                     if myo_left_data.len() > DATA_AMOUNT {
                         myo_left_data.remove(0);
                     }
@@ -356,7 +371,7 @@ pub fn main() -> Result<()> {
                     termion::event::Key::Char('b') => {
                         if override_output {
                             if let Err(e) = output.update_trigger(100f64) {
-                                println!("Error updating trigger: {:?}", e);
+                                log!("Error updating trigger: {:?}", e);
                             }
                             sending.2 = 100f64;
                         }
@@ -364,7 +379,7 @@ pub fn main() -> Result<()> {
                     termion::event::Key::Char('n') => {
                         if override_output {
                             if let Err(e) = output.update_trigger(0f64) {
-                                println!("Error updating trigger: {:?}", e)
+                                log!("Error updating trigger: {:?}", e)
                             }
                             sending.2 = 0f64;
                         }
@@ -486,8 +501,8 @@ pub fn main() -> Result<()> {
                 Some(y) => Some(fmax(x.1, y)),
             })
             .unwrap_or(0f64);
-        let eeg_min = fmin(eeg_min_1, fmin(eeg_min_2, eeg_min_3));
-        let eeg_max = fmax(eeg_max_1, fmax(eeg_max_2, eeg_max_3));
+        let eeg_min = fmin(eeg_min_1, eeg_min_2);
+        let eeg_max = fmax(eeg_max_1, eeg_max_2);
 
         let eeg_min_x = (&eeg_data_1)
             .iter()
@@ -515,16 +530,20 @@ pub fn main() -> Result<()> {
                     .direction(Direction::Horizontal)
                     .split(size);
                 let chunks = Layout::default()
-                    .constraints(constraints_2)
+                    .constraints(constraints_2.clone())
                     .direction(Direction::Vertical)
                     .split(main_chunks[0]);
+                let text_chunks = Layout::default()
+                    .constraints(constraints_2)
+                    .direction(Direction::Vertical)
+                    .split(main_chunks[1]);
 
                 // EEG Chart
 
                 Chart::default()
                     .block(
                         Block::default()
-                            .title("Myo Data")
+                            .title("EEG Data")
                             .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
                             .borders(Borders::ALL),
                     )
@@ -559,11 +578,6 @@ pub fn main() -> Result<()> {
                             .marker(Marker::Dot)
                             .style(Style::default().fg(Color::Cyan))
                             .data(&eeg_data_2),
-                        Dataset::default()
-                            .name("signal quality")
-                            .marker(Marker::Dot)
-                            .style(Style::default().fg(Color::Red))
-                            .data(&eeg_data_3),
                     ])
                     .render(&mut f, chunks[0]);
 
@@ -631,9 +645,17 @@ pub fn main() -> Result<()> {
                         Style::default().fg(Color::White),
                     ),
                 ];
+                let logs = LOGS.lock().unwrap();
+                let logs_list = logs.iter().map(|l| Text::styled(
+                    l, 
+                    Style::default().fg(Color::White),
+                ));
                 List::new(events_list.into_iter())
                     .block(Block::default().borders(Borders::ALL).title("XAC Output"))
-                    .render(&mut f, main_chunks[1]);
+                    .render(&mut f, text_chunks[0]);
+                List::new(logs_list)
+                    .block(Block::default().borders(Borders::ALL).title("Logs"))
+                    .render(&mut f, text_chunks[1]);
             })
             .unwrap();
 
