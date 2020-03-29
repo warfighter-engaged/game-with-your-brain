@@ -13,7 +13,7 @@ pub enum WfpiError {
     #[fail(display = "spi error: {}", err)]
     SpiError { err: rppal::spi::Error },
     #[fail(display = "i2c error: {}", err)]
-    PwmError { err: rppal::i2c::Error },
+    I2CErr { err: rppal::i2c::Error },
     #[fail(display = "i/o error: {}", err)]
     IoError { err: std::io::Error },
     #[fail(display = "generic error: {}", err)]
@@ -52,7 +52,7 @@ impl From<rppal::spi::Error> for WfpiError {
 
 impl From<rppal::i2c::Error> for WfpiError {
     fn from(err: rppal::i2c::Error) -> WfpiError {
-        WfpiError::PwmError { err }
+        WfpiError::I2CErr { err }
     }
 }
 

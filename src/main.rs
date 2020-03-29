@@ -12,8 +12,9 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Axis, Block, Borders, Chart, Dataset, List, Marker, Text, Widget};
+use tui::widgets::{Axis, Block, Borders, Chart, Dataset, Marker, Paragraph, Text, Widget};
 use tui::Terminal;
+use itertools::Itertools;
 
 // The simple-signal crate is used to handle incoming signals
 use simple_signal::{self, Signal};
@@ -625,36 +626,40 @@ pub fn main() -> Result<()> {
 
                 let events_list = vec![
                     Text::styled(
-                        format!("Myo (L): {}", sending.0),
+                        format!("Myo (L): {}\n", sending.0),
                         Style::default().fg(Color::White),
                     ),
                     Text::styled(
-                        format!("Myo (R): {}", sending.1),
+                        format!("Myo (R): {}\n", sending.1),
                         Style::default().fg(Color::White),
                     ),
                     Text::styled(
-                        format!("EEG: {}", sending.2),
+                        format!("EEG: {}\n", sending.2),
                         Style::default().fg(Color::White),
                     ),
                     Text::styled(
-                        format!("Curr time: {}", curr_time),
+                        format!("Curr time: {}\n", curr_time),
                         Style::default().fg(Color::White),
                     ),
                     Text::styled(
-                        format!("Keyboard Override: {}", override_output),
+                        format!("Keyboard Override: {}\n", override_output),
                         Style::default().fg(Color::White),
                     ),
                 ];
                 let logs = LOGS.lock().unwrap();
-                let logs_list = logs.iter().map(|l| Text::styled(
-                    l, 
-                    Style::default().fg(Color::White),
-                ));
-                List::new(events_list.into_iter())
+                let logs_list = logs.iter().map(|l: &String| Text::styled(
+                        format!("{}\n", l), 
+                        Style::default().fg(Color::White),
+                    )
+                ).collect_vec();
+                
+                Paragraph::new(events_list.iter())
                     .block(Block::default().borders(Borders::ALL).title("XAC Output"))
+                    .wrap(true)
                     .render(&mut f, text_chunks[0]);
-                List::new(logs_list)
+                Paragraph::new(logs_list.iter())
                     .block(Block::default().borders(Borders::ALL).title("Logs"))
+                    .wrap(true)
                     .render(&mut f, text_chunks[1]);
             })
             .unwrap();

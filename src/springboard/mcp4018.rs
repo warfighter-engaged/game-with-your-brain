@@ -3,7 +3,9 @@ use rppal::i2c;
 use crate::error::*;
 
 /// The default starting address
-pub const I2CADDR_DEFAULT: u8 = 0b0101111;
+pub const I2CADDR_DEFAULT: u8 = 0b0111110;
+
+const COMMAND_WRITE: u8 = 0x0;
 
 pub struct Mcp4018 {
     pub bus: i2c::I2c,
@@ -21,7 +23,7 @@ impl Mcp4018 {
     }
 
     pub fn wiper(&self) -> Result<u8> {
-        let res = self.bus.smbus_receive_byte()?;
+        let res = self.bus.smbus_read_byte(COMMAND_WRITE)?;
         Ok(res)
     }
 
@@ -29,7 +31,7 @@ impl Mcp4018 {
         if value > 127 {
             return Ok(()); // TODO: Should be error
         }
-        self.bus.smbus_send_byte(value)?;
+        self.bus.smbus_write_byte(COMMAND_WRITE, value)?;
         Ok(())
     }
 }
