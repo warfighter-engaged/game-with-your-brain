@@ -8,6 +8,9 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "adafruit")] {
         mod adafruit3502;
         use rppal::i2c;
+    } else if #[cfg(feature = "mcp4018")] {
+        mod mcp4018;
+        use rppal::i2c;
     } else {
         mod mcp4922;
         use rppal::spi;
@@ -35,6 +38,12 @@ cfg_if::cfg_if! {
             right_btn: gpio::OutputPin,
             trigger: adafruit3502::AdafruitDS3502,
         }
+    } else if #[cfg(feature = "mcp4018")] {
+        pub struct Springboard {
+            left_btn: gpio::OutputPin,
+            right_btn: gpio::OutputPin,
+            trigger: mcp4018::Mcp4018,
+        }
     } else {
         pub struct Springboard {
             left_btn: gpio::OutputPin,
@@ -55,6 +64,10 @@ impl Springboard {
                 let trigger_bus = i2c::I2c::with_bus(I2C_TRIGGER_BUS)?;
                 let mut trigger = adafruit3502::AdafruitDS3502::new(trigger_bus);
                 trigger.begin(adafruit3502::DS3502_I2CADDR_DEFAULT)?;
+            } else if #[cfg(feature = "mcp4018")] {
+                let trigger_bus = i2c::I2c::with_bus(I2C_TRIGGER_BUS)?;
+                let mut trigger = mcp4018::Mcp4018::new(trigger_bus);
+                trigger.begin(mcp4018::I2CADDR_DEFAULT)?;
             } else {
                 let trigger_bus = spi::Spi::new(
                     spi::Bus::Spi0,
@@ -93,6 +106,10 @@ impl Springboard {
     pub fn update_trigger(&mut self, value: f64) -> Result<()> {
         cfg_if::cfg_if! {
             if #[cfg(feature = "adafruit")] {
+                // The wiper expects a value in the range [0, 127]
+                self.trigger.set_wiper((value * 127f64 / 100f64) as u8)?;
+                log!("Set wiper to: {}", self.trigger.wiper()?);
+            } else if #[cfg(feature = "mcp4018")] {
                 // The wiper expects a value in the range [0, 127]
                 self.trigger.set_wiper((value * 127f64 / 100f64) as u8)?;
                 log!("Set wiper to: {}", self.trigger.wiper()?);

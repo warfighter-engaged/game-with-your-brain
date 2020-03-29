@@ -24,6 +24,7 @@ opt-level = 3
 panic = "abort"
 
 [features]
-default = []
+default = ["mcp4018"]
 
 adafruit = []
+mcp4018 = []

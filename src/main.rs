@@ -487,14 +487,14 @@ pub fn main() -> Result<()> {
                 Some(y) => Some(fmax(x.1, y)),
             })
             .unwrap_or(0f64);
-        let eeg_min_3 = (&eeg_data_3)
+        let _eeg_min_3 = (&eeg_data_3)
             .iter()
             .fold(None, |min, x| match min {
                 None => Some(x.1),
                 Some(y) => Some(fmin(x.1, y)),
             })
             .unwrap_or(0f64);
-        let eeg_max_3 = (&eeg_data_3)
+        let _eeg_max_3 = (&eeg_data_3)
             .iter()
             .fold(None, |min, x| match min {
                 None => Some(x.1),
